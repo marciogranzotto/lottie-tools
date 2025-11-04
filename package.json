@@ -7,7 +7,8 @@
     "lottie-to-gif": "bin/lottie-to-gif"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy:templates",
+    "copy:templates": "mkdir -p dist/templates && cp src/templates/*.html dist/templates/",
     "dev": "tsc --watch",
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",

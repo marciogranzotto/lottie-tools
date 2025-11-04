@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lottie Player</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: transparent;
+    }
+    #lottie-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="lottie-container"></div>
+
+  <!-- Load lottie-web from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+
+  <script>
+    // This will be populated by the renderer
+    window.lottieAnimationData = null;
+    window.lottieAnimation = null;
+    window.renderWidth = null;
+    window.renderHeight = null;
+
+    /**
+     * Initialize the Lottie animation with provided data
+     */
+    window.initAnimation = function(animationData, width, height) {
+      return new Promise((resolve, reject) => {
+        try {
+          window.lottieAnimationData = animationData;
+          window.renderWidth = width;
+          window.renderHeight = height;
+
+          const container = document.getElementById('lottie-container');
+          container.style.width = width + 'px';
+          container.style.height = height + 'px';
+
+          window.lottieAnimation = lottie.loadAnimation({
+            container: container,
+            renderer: 'svg',
+            loop: false,
+            autoplay: false,
+            animationData: animationData,
+            rendererSettings: {
+              preserveAspectRatio: 'xMidYMid meet',
+              clearCanvas: true,
+              progressiveLoad: false,
+              hideOnTransparent: true
+            }
+          });
+
+          // Wait for animation to be ready
+          window.lottieAnimation.addEventListener('DOMLoaded', () => {
+            resolve({
+              totalFrames: window.lottieAnimation.totalFrames,
+              frameRate: window.lottieAnimation.frameRate,
+              duration: window.lottieAnimation.getDuration(true) // in seconds
+            });
+          });
+
+          window.lottieAnimation.addEventListener('error', (error) => {
+            reject(new Error('Lottie animation error: ' + error));
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    };
+
+    /**
+     * Go to a specific frame
+     */
+    window.goToFrame = function(frameNumber) {
+      if (!window.lottieAnimation) {
+        throw new Error('Animation not initialized');
+      }
+      window.lottieAnimation.goToAndStop(frameNumber, true);
+    };
+
+    /**
+     * Get animation info
+     */
+    window.getAnimationInfo = function() {
+      if (!window.lottieAnimation) {
+        return null;
+      }
+      return {
+        totalFrames: window.lottieAnimation.totalFrames,
+        frameRate: window.lottieAnimation.frameRate,
+        currentFrame: window.lottieAnimation.currentFrame,
+        isPaused: window.lottieAnimation.isPaused,
+        duration: window.lottieAnimation.getDuration(true)
+      };
+    };
+
+    /**
+     * Destroy the animation and clean up
+     */
+    window.destroyAnimation = function() {
+      if (window.lottieAnimation) {
+        window.lottieAnimation.destroy();
+        window.lottieAnimation = null;
+      }
+    };
+
+    // Signal that the page is ready
+    window.pageReady = true;
+  </script>
+</body>
+</html>
