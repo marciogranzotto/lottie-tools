@@ -49,5 +49,8 @@ Thumbs.db
 .chrome/
 .local-chromium/
 
+# Output folder
+output/
+
 # Output examples (optional, uncomment if you don't want to commit example outputs)
 # examples/*.gif

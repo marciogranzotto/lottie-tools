@@ -31,6 +31,7 @@ export async function renderAnimation(options: RenderOptions): Promise<RenderRes
     const height = options.height || animationData.h;
     const fps = options.fps || animationData.fr;
     const timeout = options.timeout || 60000;
+    const backgroundColor = options.backgroundColor;
     const onProgress = options.onProgress;
 
     // Calculate frame information
@@ -72,13 +73,14 @@ export async function renderAnimation(options: RenderOptions): Promise<RenderRes
 
     // Initialize the animation
     const animInfo = await page.evaluate(
-      (data: any, w: number, h: number) => {
+      (data: any, w: number, h: number, bgColor?: string) => {
         // @ts-ignore - window is available in browser context
-        return window.initAnimation(data, w, h);
+        return window.initAnimation(data, w, h, bgColor);
       },
       animationData,
       width,
-      height
+      height,
+      backgroundColor
     );
 
     // Render frames
@@ -99,6 +101,8 @@ export async function renderAnimation(options: RenderOptions): Promise<RenderRes
       await new Promise(resolve => setTimeout(resolve, 50));
 
       // Capture the frame
+      // Only omit background if we don't have a background color or it's transparent
+      const omitBackground = !backgroundColor || backgroundColor === 'transparent';
       const screenshot = await page.screenshot({
         type: 'png',
         clip: {
@@ -107,7 +111,7 @@ export async function renderAnimation(options: RenderOptions): Promise<RenderRes
           width,
           height,
         },
-        omitBackground: true,
+        omitBackground,
       });
 
       frames.push({
@@ -192,6 +196,7 @@ export async function renderSingleFrame(
     const height = options.height || animationData.h;
     const fps = options.fps || animationData.fr;
     const timeout = options.timeout || 60000;
+    const backgroundColor = options.backgroundColor;
 
     const inPoint = animationData.ip ?? 0;
     const animFrame = inPoint + (frameNumber * animationData.fr / fps);
@@ -212,13 +217,14 @@ export async function renderSingleFrame(
     await page.waitForFunction('window.pageReady === true', { timeout });
 
     await page.evaluate(
-      (data: any, w: number, h: number) => {
+      (data: any, w: number, h: number, bgColor?: string) => {
         // @ts-ignore - window is available in browser context
-        return window.initAnimation(data, w, h);
+        return window.initAnimation(data, w, h, bgColor);
       },
       animationData,
       width,
-      height
+      height,
+      backgroundColor
     );
 
     await page.evaluate((frame: number) => {
@@ -228,10 +234,11 @@ export async function renderSingleFrame(
 
     await new Promise(resolve => setTimeout(resolve, 50));
 
+    const omitBackground = !backgroundColor || backgroundColor === 'transparent';
     const screenshot = await page.screenshot({
       type: 'png',
       clip: { x: 0, y: 0, width, height },
-      omitBackground: true,
+      omitBackground,
     });
 
     await page.evaluate(() => {

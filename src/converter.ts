@@ -36,6 +36,31 @@ class Logger {
 }
 
 /**
+ * Converts hex color to CSS format
+ * @param hex - Hex color string (e.g., "FFFFFF" or "FFFFFFFF")
+ * @returns CSS color string
+ */
+function hexToCSS(hex: string): string {
+  // Remove # if present
+  hex = hex.replace(/^#/, '');
+
+  if (hex.length === 6) {
+    // RGB format: RRGGBB
+    return `#${hex}`;
+  } else if (hex.length === 8) {
+    // RGBA format: RRGGBBAA
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const a = parseInt(hex.substring(6, 8), 16) / 255;
+    return `rgba(${r},${g},${b},${a.toFixed(3)})`;
+  } else {
+    // Invalid format, return as-is with # prefix
+    return `#${hex}`;
+  }
+}
+
+/**
  * Converts a Lottie JSON animation to an animated GIF file
  * @param config - Conversion configuration
  * @returns Promise resolving to conversion result
@@ -54,7 +79,21 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
     }
 
     // Determine output path
-    const outputPath = config.output || config.input.replace(/\.json$/i, '.gif');
+    let outputPath: string;
+    if (config.output) {
+      outputPath = config.output;
+    } else {
+      // Default: output to 'output/' folder with same filename
+      const inputBasename = path.basename(config.input).replace(/\.json$/i, '.gif');
+      outputPath = path.join('output', inputBasename);
+
+      // Create output directory if it doesn't exist
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+        logger.log(`Created output directory: ${outputDir}`);
+      }
+    }
     logger.log(`Converting: ${config.input} → ${outputPath}`);
 
     // Report progress: parsing
@@ -83,13 +122,36 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
     }
 
     // Extract configuration with defaults
-    const width = config.width || parseResult.metadata.width;
-    const height = config.height || parseResult.metadata.height;
+    let width: number;
+    let height: number;
+
+    // Handle scaled option
+    if (config.scaled) {
+      width = Math.round(parseResult.metadata.width * config.scaled);
+      height = Math.round(parseResult.metadata.height * config.scaled);
+    } else {
+      width = config.width || parseResult.metadata.width;
+      height = config.height || parseResult.metadata.height;
+    }
+
     const fps = config.fps || parseResult.metadata.frameRate;
     const quality = config.quality !== undefined ? config.quality : 80;
     const dither = config.dither !== undefined ? config.dither : false;
     const repeat = config.repeat !== undefined ? config.repeat : -1;
     const timeout = config.timeout || 60000;
+
+    // Determine background color
+    let backgroundColor: string | undefined;
+    if (config.backgroundColor) {
+      // Convert hex format to CSS format
+      backgroundColor = hexToCSS(config.backgroundColor);
+    } else if (parseResult.metadata.backgroundColor) {
+      // Use Lottie's background color if available
+      backgroundColor = parseResult.metadata.backgroundColor;
+    } else {
+      // Default to transparent
+      backgroundColor = 'transparent';
+    }
 
     // Calculate expected frame count
     const expectedFrames = Math.ceil(
@@ -110,6 +172,9 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
 
     // Phase 2: Render animation frames
     logger.log(`Phase 2: Rendering ${expectedFrames} frames at ${fps}fps...`);
+    if (backgroundColor && backgroundColor !== 'transparent') {
+      logger.log(`  Using background color: ${backgroundColor}`);
+    }
     const renderStart = Date.now();
     let renderResult;
     try {
@@ -118,6 +183,7 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
         width,
         height,
         fps,
+        backgroundColor,
         timeout,
         onProgress: (renderProgress) => {
           if (config.onProgress) {

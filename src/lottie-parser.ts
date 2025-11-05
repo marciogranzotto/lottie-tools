@@ -166,6 +166,7 @@ export function extractMetadata(data: LottieAnimation): LottieMetadata {
     totalFrames,
     duration,
     name: data.nm,
+    backgroundColor: data.bg, // Background color from Lottie JSON
   };
 }
 

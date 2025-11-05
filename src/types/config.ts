@@ -9,7 +9,7 @@ export interface ConversionConfig {
   /** Input Lottie JSON file path */
   input: string;
 
-  /** Output GIF file path (optional, defaults to input filename with .gif extension) */
+  /** Output GIF file path (optional, defaults to output folder with input filename) */
   output?: string;
 
   /** Frames per second (optional, defaults to source animation FPS) */
@@ -20,6 +20,12 @@ export interface ConversionConfig {
 
   /** Output height in pixels (optional, defaults to source height) */
   height?: number;
+
+  /** Scale multiplier for dimensions (e.g., 2 = 2x size, overrides width/height) */
+  scaled?: number;
+
+  /** Background color override in hex format (e.g., "FFFFFF" or "FFFFFFFF" with alpha) */
+  backgroundColor?: string;
 
   /** Quality setting 1-100 (optional, default: 80) */
   quality?: number;

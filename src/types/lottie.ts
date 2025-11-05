@@ -15,6 +15,7 @@ export interface LottieAnimation {
   h: number;           // Height in pixels
   nm?: string;         // Name
   ddd?: number;        // 3D flag
+  bg?: string;         // Background color (hex format, e.g., "#FFFFFF")
   assets?: any[];      // Assets array
   layers: any[];       // Layers array
   markers?: any[];     // Markers
@@ -38,6 +39,7 @@ export interface LottieMetadata {
   duration: number;    // Duration in seconds
   totalFrames: number; // Total number of frames
   name?: string;       // Animation name (if provided)
+  backgroundColor?: string; // Background color (hex format, null if transparent)
 }
 
 /**

@@ -27,10 +27,12 @@ program
   .description('Convert Lottie JSON animations to animated GIF files')
   .version(packageJson.version, '-v, --version', 'Output the version number')
   .argument('<input>', 'Input Lottie JSON file path')
-  .option('-o, --output <path>', 'Output GIF file path (default: input filename with .gif extension)')
+  .option('-o, --output <path>', 'Output GIF file path (default: output/filename.gif)')
   .option('--fps <number>', 'Frames per second (default: source animation FPS)', parseFloat)
   .option('--width <pixels>', 'Output width in pixels (default: source width)', parseInt)
   .option('--height <pixels>', 'Output height in pixels (default: source height)', parseInt)
+  .option('--scaled <number>', 'Scale multiplier (e.g., 2 = 2x size, overrides width/height)', parseFloat)
+  .option('--bg <color>', 'Background color in hex format (e.g., FFFFFF or FFFFFFFF with alpha)')
   .option('--quality <number>', 'Quality level 1-100 (default: 80)', parseInt)
   .option('--dither', 'Enable dithering for better color representation', false)
   .option('--no-loop', 'Disable looping (default: loop forever)')
@@ -43,6 +45,9 @@ Examples:
   $ lottie-to-gif animation.json
   $ lottie-to-gif animation.json -o output.gif
   $ lottie-to-gif animation.json --fps 30 --width 800 --height 600
+  $ lottie-to-gif animation.json --scaled 2
+  $ lottie-to-gif animation.json --bg FFFFFF
+  $ lottie-to-gif animation.json --bg FF000080
   $ lottie-to-gif animation.json --quality 90 --dither
   $ lottie-to-gif animation.json --no-loop
   $ lottie-to-gif animation.json --repeat 3
@@ -59,6 +64,8 @@ For more information, visit: https://github.com/anthropics/lottie-tools
         fps: options.fps,
         width: options.width,
         height: options.height,
+        scaled: options.scaled,
+        backgroundColor: options.bg,
         quality: options.quality,
         dither: options.dither,
         timeout: options.timeout,
@@ -87,7 +94,8 @@ For more information, visit: https://github.com/anthropics/lottie-tools
       }
 
       // Display start message
-      const outputPath = config.output || input.replace(/\.json$/i, '.gif');
+      const inputBasename = path.basename(input).replace(/\.json$/i, '.gif');
+      const outputPath = config.output || path.join('output', inputBasename);
       console.log(chalk.bold('\n🎬 Lottie to GIF Converter\n'));
       console.log(chalk.gray('Input:'), chalk.cyan(input));
       console.log(chalk.gray('Output:'), chalk.cyan(outputPath));

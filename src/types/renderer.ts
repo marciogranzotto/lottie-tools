@@ -20,6 +20,9 @@ export interface RenderOptions {
   /** Frames per second (defaults to animation frame rate) */
   fps?: number;
 
+  /** Background color in CSS format (e.g., "#FFFFFF", "rgba(255,255,255,0.5)", or "transparent") */
+  backgroundColor?: string;
+
   /** Timeout for rendering in milliseconds (default: 60000) */
   timeout?: number;
 
