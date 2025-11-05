@@ -26,6 +26,9 @@ export interface EncodeOptions {
   /** Repeat count (-1 = loop forever, 0 = no repeat, n = repeat n times) */
   repeat?: number;
 
+  /** Background color in CSS format (e.g., "#FFFFFF", "transparent") */
+  backgroundColor?: string;
+
   /** Progress callback function */
   onProgress?: (progress: EncodeProgress) => void;
 }

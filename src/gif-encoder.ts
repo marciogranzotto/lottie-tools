@@ -30,6 +30,7 @@ export async function encodeToGif(options: EncodeOptions): Promise<EncodeResult>
       quality = 80,
       dither = false,
       repeat = -1, // Loop forever by default
+      backgroundColor,
       onProgress,
     } = options;
 
@@ -73,6 +74,13 @@ export async function encodeToGif(options: EncodeOptions): Promise<EncodeResult>
     encoder.setRepeat(repeat); // -1 = loop forever, 0 = no repeat
     encoder.setDelay(Math.round(1000 / fps)); // Delay in milliseconds between frames
     encoder.setQuality(Math.max(1, Math.min(100 - quality, 20))); // Lower = better (inverted)
+
+    // Enable transparency for transparent backgrounds
+    if (backgroundColor === 'transparent') {
+      // Set transparent color to black (0x000000)
+      // The encoder will automatically detect pixels with alpha=0 and map them to this color index
+      encoder.setTransparent(0x000000);
+    }
 
     if (dither) {
       encoder.setThreshold(0); // Enable dithering

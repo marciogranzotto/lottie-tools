@@ -11,7 +11,8 @@ A powerful command-line tool to convert Lottie JSON animations to animated GIF f
 - 🎬 **Accurate Rendering** - Uses official lottie-web library in headless browser for pixel-perfect output
 - ⚡ **Fast Processing** - Efficient frame-by-frame rendering with Puppeteer
 - 🎨 **Quality Control** - Configurable quality settings and optional dithering
-- 📏 **Flexible Output** - Custom dimensions, frame rate, and loop settings
+- 📏 **Flexible Output** - Custom dimensions, scaling, frame rate, and loop settings
+- 🌈 **Background Control** - Transparent backgrounds (binary transparency) or custom colors with alpha support
 - 📊 **Progress Tracking** - Beautiful progress indicators and verbose logging
 - 🛠️ **Developer Friendly** - Comprehensive TypeScript API and CLI
 
@@ -68,10 +69,12 @@ lottie-to-gif <input> [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-o, --output <path>` | Output GIF file path | `<input>.gif` |
+| `-o, --output <path>` | Output GIF file path | `output/<filename>.gif` |
 | `--fps <number>` | Frames per second | Source FPS |
 | `--width <pixels>` | Output width in pixels | Source width |
 | `--height <pixels>` | Output height in pixels | Source height |
+| `--scaled <number>` | Scale multiplier (e.g., 2 = 2x size) | - |
+| `--bg <color>` | Background color (FFFFFF or FFFFFFFF with alpha, or 'transparent') | Transparent |
 | `--quality <number>` | Quality level (1-100) | 80 |
 | `--dither` | Enable dithering for better colors | false |
 | `--no-loop` | Disable looping | Loop forever |
@@ -85,11 +88,23 @@ lottie-to-gif <input> [options]
 ### Examples
 
 ```bash
-# Convert with default settings
+# Convert with default settings (transparent background)
 lottie-to-gif animation.json
 
 # Resize and adjust frame rate
 lottie-to-gif animation.json --width 400 --height 300 --fps 24
+
+# Scale to 2x size
+lottie-to-gif animation.json --scaled 2
+
+# White background
+lottie-to-gif animation.json --bg FFFFFF
+
+# Semi-transparent red background
+lottie-to-gif animation.json --bg FF000080
+
+# Explicit transparent background
+lottie-to-gif animation.json --bg transparent
 
 # High quality output with dithering
 lottie-to-gif animation.json --quality 95 --dither
@@ -118,8 +133,8 @@ async function convert() {
   const result = await convertLottieToGif({
     input: 'animation.json',
     output: 'output.gif',
-    width: 800,
-    height: 600,
+    scaled: 2,                    // Scale to 2x size
+    backgroundColor: 'FFFFFF',    // White background (or 'transparent')
     fps: 30,
     quality: 85,
     dither: true,
@@ -142,13 +157,15 @@ convert();
 ```typescript
 interface ConversionConfig {
   input: string;                    // Required: Input Lottie JSON file path
-  output?: string;                  // Optional: Output GIF path
+  output?: string;                  // Optional: Output GIF path (default: output/<filename>.gif)
   fps?: number;                     // Optional: Frame rate
   width?: number;                   // Optional: Output width
   height?: number;                  // Optional: Output height
+  scaled?: number;                  // Optional: Scale multiplier (e.g., 2 = 2x size)
+  backgroundColor?: string;         // Optional: Background color (hex: FFFFFF/FFFFFFFF or 'transparent')
   quality?: number;                 // Optional: Quality (1-100)
   dither?: boolean;                 // Optional: Enable dithering
-  repeat?: number;                  // Optional: Repeat count
+  repeat?: number;                  // Optional: Repeat count (-1 = loop, 0 = no repeat)
   timeout?: number;                 // Optional: Timeout in ms
   verbose?: boolean;                // Optional: Verbose logging
   onProgress?: (progress) => void;  // Optional: Progress callback

@@ -23,7 +23,7 @@
 - Output directory is writable
 
 ## Constraints
-- **GIF Format Limitations**: 256-color palette, no true alpha transparency
+- **GIF Format Limitations**: 256-color palette, binary transparency only (fully transparent or fully opaque, no semi-transparent pixels)
 - **Performance**: Frame-by-frame rendering is CPU-intensive for complex animations
 - **Memory**: All frames may need to be held in memory during encoding
 - **File Size**: GIFs can become large for long/complex animations
@@ -570,9 +570,13 @@ Not applicable for initial release (all features enabled by default)
 
 2025-11-04 — Milestone: Testing & Documentation — Action: Completed comprehensive documentation and testing infrastructure — Result: Updated README.md (comprehensive guide with badges, features, installation, usage examples, API docs, troubleshooting, performance tips, limitations), created CONTRIBUTING.md (contribution guidelines, dev setup, coding standards, testing checklist), created LICENSE (MIT), added examples/bond_vector.json (sample file), existing test suite: 23 unit tests passing, 3 integration test suites with coverage at 77% statements/70% branches/78% lines, all core functionality tested (parser, renderer, encoder, converter, CLI), npm scripts verified working (build, test, lint, coverage) — By: Claude
 
+2025-11-05 — Feature: Scale, Background Color, and Output Folder — Action: Added scaling, background color, and output path features — Result: Added --scaled option for easy dimension scaling (e.g., --scaled 2 for 2x size), added --bg option for custom background colors in hex format (FFFFFF or FFFFFFFF with alpha), background color now auto-detected from Lottie JSON or defaults to transparent, changed default output path to output/ folder with source filename, added output/ folder to .gitignore, extended type definitions (ConversionConfig, RenderOptions, LottieMetadata), added hexToCSS() helper for color conversion, updated lottie-parser to extract background color, updated renderer to apply background color to HTML template, modified screenshot logic to include/omit background, tested with multiple scenarios: default transparent, 2x scaling, white background, semi-transparent red, combined scaling + background — By: Claude
+
+2025-11-05 — Feature: GIF Transparency Support — Action: Implemented binary transparency for GIF output — Result: Added backgroundColor field to EncodeOptions interface, updated gif-encoder.ts to call encoder.setTransparent(0x000000) when backgroundColor is 'transparent', gif-encoder-2 automatically detects pixels with alpha=0 and maps them to transparent color index in GIF palette, updated converter.ts to pass backgroundColor to encoder, fixed hexToCSS() to properly handle "transparent" keyword, tested transparent backgrounds (default and explicit --bg transparent), tested solid backgrounds for regression (white, blue), GIFs now properly support binary transparency with transparent pixels showing checkerboard pattern in compatible viewers — By: Claude
+
 ---
 
 **Plan Created**: 2025-11-04
-**Last Updated**: 2025-11-04
-**Status**: Milestone 7 Completed
+**Last Updated**: 2025-11-05
+**Status**: Milestone 7 Completed + Feature Enhancements
 **Next Milestone**: Milestone 8 - Performance Optimization & Polish

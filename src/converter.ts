@@ -37,10 +37,15 @@ class Logger {
 
 /**
  * Converts hex color to CSS format
- * @param hex - Hex color string (e.g., "FFFFFF" or "FFFFFFFF")
+ * @param hex - Hex color string (e.g., "FFFFFF" or "FFFFFFFF") or CSS keyword (e.g., "transparent")
  * @returns CSS color string
  */
 function hexToCSS(hex: string): string {
+  // Handle CSS color keywords
+  if (hex.toLowerCase() === 'transparent') {
+    return 'transparent';
+  }
+
   // Remove # if present
   hex = hex.replace(/^#/, '');
 
@@ -233,6 +238,7 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
         quality,
         dither,
         repeat,
+        backgroundColor,
         onProgress: (encodeProgress) => {
           if (config.onProgress) {
             config.onProgress({

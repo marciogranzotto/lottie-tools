@@ -234,13 +234,108 @@ describe('Lottie to GIF Converter Integration Tests', () => {
         verbose: false,
       });
 
-      const expectedOutput = path.join(testOutputDir, 'test-input.gif');
+      // Default output path is now output/<filename>.gif
+      const expectedOutput = path.join('output', 'test-input.gif');
       expect(result.outputPath).toBe(expectedOutput);
       expect(fs.existsSync(expectedOutput)).toBe(true);
 
       // Cleanup
       fs.unlinkSync(testInputPath);
       fs.unlinkSync(expectedOutput);
+    }, 120000);
+
+    it('should support scaled option', async () => {
+      if (!fs.existsSync(examplePath)) {
+        console.log('Skipping: example file not found');
+        return;
+      }
+
+      const outputPath = path.join(testOutputDir, 'converter-test-scaled.gif');
+
+      const result = await convertLottieToGif({
+        input: examplePath,
+        output: outputPath,
+        scaled: 2, // 2x size
+        verbose: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      // Output dimensions should be 2x the source dimensions
+      expect(result.output.width).toBe(result.source.width * 2);
+      expect(result.output.height).toBe(result.source.height * 2);
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      console.log(`✓ Created scaled GIF: ${outputPath} (${(result.fileSize / 1024).toFixed(2)} KB)`);
+    }, 120000);
+
+    it('should support transparent background', async () => {
+      if (!fs.existsSync(examplePath)) {
+        console.log('Skipping: example file not found');
+        return;
+      }
+
+      const outputPath = path.join(testOutputDir, 'converter-test-transparent.gif');
+
+      const result = await convertLottieToGif({
+        input: examplePath,
+        output: outputPath,
+        backgroundColor: 'transparent',
+        verbose: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      console.log(`✓ Created transparent GIF: ${outputPath} (${(result.fileSize / 1024).toFixed(2)} KB)`);
+    }, 120000);
+
+    it('should support solid background color', async () => {
+      if (!fs.existsSync(examplePath)) {
+        console.log('Skipping: example file not found');
+        return;
+      }
+
+      const outputPath = path.join(testOutputDir, 'converter-test-white-bg.gif');
+
+      const result = await convertLottieToGif({
+        input: examplePath,
+        output: outputPath,
+        backgroundColor: 'FFFFFF', // White background
+        verbose: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      console.log(`✓ Created white background GIF: ${outputPath} (${(result.fileSize / 1024).toFixed(2)} KB)`);
+    }, 120000);
+
+    it('should support combined scaled and background color', async () => {
+      if (!fs.existsSync(examplePath)) {
+        console.log('Skipping: example file not found');
+        return;
+      }
+
+      const outputPath = path.join(testOutputDir, 'converter-test-scaled-bg.gif');
+
+      const result = await convertLottieToGif({
+        input: examplePath,
+        output: outputPath,
+        scaled: 1.5,
+        backgroundColor: '0000FF', // Blue background
+        verbose: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      expect(result.output.width).toBe(Math.round(result.source.width * 1.5));
+      expect(result.output.height).toBe(Math.round(result.source.height * 1.5));
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      console.log(`✓ Created scaled + blue background GIF: ${outputPath} (${(result.fileSize / 1024).toFixed(2)} KB)`);
     }, 120000);
   });
 });

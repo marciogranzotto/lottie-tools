@@ -175,6 +175,110 @@ describe('GIF Encoder Integration Tests', () => {
       expect(fs.existsSync(highQualityPath)).toBe(true);
       expect(fs.existsSync(lowQualityPath)).toBe(true);
     }, 60000);
+
+    it('should encode with transparent background', async () => {
+      const frames: RenderedFrame[] = [];
+      const width = 10;
+      const height = 10;
+
+      // Create frames with transparent pixels
+      const PNG = require('pngjs').PNG;
+      for (let i = 0; i < 2; i++) {
+        const png = new PNG({ width, height });
+
+        // Create a pattern with transparent and opaque pixels
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const idx = (width * y + x) << 2;
+            // Make a checkerboard pattern: transparent and opaque
+            if ((x + y) % 2 === 0) {
+              // Transparent pixel
+              png.data[idx] = 0;
+              png.data[idx + 1] = 0;
+              png.data[idx + 2] = 0;
+              png.data[idx + 3] = 0; // Alpha = 0 (fully transparent)
+            } else {
+              // Opaque colored pixel
+              png.data[idx] = 255;
+              png.data[idx + 1] = i * 100;
+              png.data[idx + 2] = 0;
+              png.data[idx + 3] = 255; // Alpha = 255 (fully opaque)
+            }
+          }
+        }
+
+        const buffer = PNG.sync.write(png);
+        frames.push({
+          frameNumber: i,
+          time: i / 10,
+          buffer,
+          width,
+          height,
+        });
+      }
+
+      const outputPath = path.join(testOutputDir, 'test-transparent.gif');
+
+      const result = await encodeToGif({
+        outputPath,
+        frames,
+        fps: 10,
+        quality: 80,
+        backgroundColor: 'transparent',
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      expect(result.frameCount).toBe(2);
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      // Verify GIF signature
+      const fileBuffer = fs.readFileSync(outputPath);
+      const gifSignature = Buffer.from('GIF89a');
+      expect(fileBuffer.slice(0, 6).equals(gifSignature)).toBe(true);
+
+      console.log(`✓ Created transparent GIF: ${outputPath} (${(result.fileSize / 1024).toFixed(2)} KB)`);
+    }, 30000);
+
+    it('should encode with solid background color', async () => {
+      const frames: RenderedFrame[] = [];
+      const width = 10;
+      const height = 10;
+
+      // Create frames with some pixels
+      const PNG = require('pngjs').PNG;
+      for (let i = 0; i < 2; i++) {
+        const png = new PNG({ width, height });
+        for (let j = 0; j < width * height * 4; j += 4) {
+          png.data[j] = 255;     // Red
+          png.data[j + 1] = 0;   // Green
+          png.data[j + 2] = 0;   // Blue
+          png.data[j + 3] = 255; // Alpha (opaque)
+        }
+        const buffer = PNG.sync.write(png);
+        frames.push({
+          frameNumber: i,
+          time: i / 10,
+          buffer,
+          width,
+          height,
+        });
+      }
+
+      const outputPath = path.join(testOutputDir, 'test-solid-bg.gif');
+
+      const result = await encodeToGif({
+        outputPath,
+        frames,
+        fps: 10,
+        quality: 80,
+        backgroundColor: '#FFFFFF', // Solid white background
+      });
+
+      expect(result).toBeDefined();
+      expect(result.outputPath).toBe(outputPath);
+      expect(fs.existsSync(outputPath)).toBe(true);
+    }, 30000);
   });
 
   describe('End-to-End: Render + Encode', () => {
