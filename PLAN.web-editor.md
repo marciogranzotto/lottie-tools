@@ -71,27 +71,33 @@
 **Goal**: Set up web application foundation with development environment
 
 **Steps**:
-- [ ] Initialize React + Vite + TypeScript project
-- [ ] Set up project structure:
+- [x] Initialize React + Vite + TypeScript project
+- [x] Set up project structure:
   - `web-editor/` directory (separate from CLI tool)
   - `src/`, `public/`, `dist/` directories
   - Entry point HTML file
-- [ ] Set up build system (Vite recommended for speed)
-- [ ] Install core dependencies:
-  - react, react-dom (^18.x)
+- [x] Set up build system (Vite recommended for speed)
+- [x] Install core dependencies:
+  - react, react-dom (^19.x)
   - lottie-web (for preview)
   - zustand (state management)
   - Research and install timeline library if suitable
-- [ ] Create basic React component structure:
+- [x] Create basic React component structure:
   - Header/toolbar
   - Main canvas/preview area
   - Timeline panel
   - Properties panel
   - Import/export buttons
-- [ ] Set up basic CSS styling (CSS modules or styled-components)
-- [ ] Configure Vite dev server with HMR
-- [ ] Configure TypeScript (tsconfig.json already set up with Vite)
-- [ ] Set up Zustand store structure
+- [x] Set up basic CSS styling (CSS modules or styled-components)
+- [x] Configure Vite dev server with HMR
+- [x] Configure TypeScript (tsconfig.json already set up with Vite)
+- [x] Set up Zustand store structure
+- [ ] **Set up testing infrastructure (TDD requirement)**:
+  - [ ] Install Vitest and testing libraries
+  - [ ] Configure Vitest for React + TypeScript
+  - [ ] Set up test coverage reporting
+  - [ ] Write tests for Zustand store
+  - [ ] Write tests for basic components
 
 **Files**:
 - `web-editor/index.html`
@@ -115,13 +121,16 @@
 - No impact on existing CLI tool
 
 **Exit Criteria**:
-- Project structure is organized and clean
-- React + TypeScript compiles without errors
-- Zustand store is set up and working
-- Development environment is functional with HMR
-- Basic UI layout renders in browser
-- Build system works for development and production
-- Can serve and view the application locally
+- [x] Project structure is organized and clean
+- [x] React + TypeScript compiles without errors
+- [x] Zustand store is set up and working
+- [x] Development environment is functional with HMR
+- [x] Basic UI layout renders in browser
+- [x] Build system works for development and production
+- [x] Can serve and view the application locally
+- [ ] **Testing infrastructure configured**
+- [ ] **All code has corresponding tests (TDD)**
+- [ ] **Test coverage ≥80%**
 
 ---
 
@@ -812,6 +821,86 @@
 - **DOMParser**: Native browser API (SVG parsing)
 - **Timeline Library**: Research options (react-timeline, vis-timeline, or react-calendar-timeline) - use if suitable to reduce complexity
 
+### Test-Driven Development (TDD) Methodology
+
+**ALL development must follow TDD principles:**
+
+1. **Red-Green-Refactor Cycle**:
+   - 🔴 **Red**: Write a failing test first that defines desired behavior
+   - 🟢 **Green**: Write minimal code to make the test pass
+   - 🔵 **Refactor**: Improve code quality while keeping tests passing
+
+2. **Testing Stack**:
+   - **Vitest**: Fast unit test runner (Vite-native)
+   - **React Testing Library**: Component testing
+   - **@testing-library/user-event**: User interaction simulation
+   - **@testing-library/jest-dom**: DOM assertion matchers
+
+3. **Test Coverage Requirements**:
+   - Minimum 80% code coverage for all milestones
+   - 100% coverage for critical paths (data models, exporters, importers)
+   - All new features must have tests before implementation
+
+4. **Testing Guidelines**:
+   - **Unit Tests**: Test individual functions and components in isolation
+   - **Integration Tests**: Test component interactions and data flow
+   - **E2E Tests** (future): Test complete user workflows
+   - Mock external dependencies (lottie-web, file I/O)
+   - Test edge cases and error scenarios
+
+5. **Test Organization**:
+   ```
+   web-editor/
+   ├── src/
+   │   ├── components/
+   │   │   ├── Canvas.tsx
+   │   │   └── Canvas.test.tsx        # Co-located tests
+   │   ├── store/
+   │   │   ├── useStore.ts
+   │   │   └── useStore.test.ts
+   │   └── utils/
+   │       ├── svg-parser.ts
+   │       └── svg-parser.test.ts
+   └── tests/
+       └── integration/                # Integration tests
+   ```
+
+6. **Milestone Implementation Flow**:
+   For each milestone:
+   1. Write tests for all required functionality (Red)
+   2. Verify tests fail appropriately
+   3. Implement code to pass tests (Green)
+   4. Refactor and optimize (Blue)
+   5. Verify coverage meets 80% threshold
+   6. Commit with passing tests
+
+7. **Example TDD Workflow**:
+   ```typescript
+   // 1. Write test first (Red)
+   describe('SVG Parser', () => {
+     it('should parse a simple rect element', () => {
+       const svg = '<svg><rect x="10" y="20" width="100" height="50"/></svg>';
+       const result = parseSVG(svg);
+       expect(result.layers).toHaveLength(1);
+       expect(result.layers[0].type).toBe('rect');
+     });
+   });
+
+   // 2. Run test → fails (no implementation yet)
+   // 3. Implement minimal code (Green)
+   // 4. Run test → passes
+   // 5. Refactor for quality (Blue)
+   ```
+
+**Benefits of TDD**:
+- Prevents regression bugs
+- Forces good API design
+- Provides living documentation
+- Increases confidence in refactoring
+- Catches edge cases early
+
+**IMPORTANT**: No code should be committed without corresponding tests. All milestones must include test implementation as part of the completion criteria.
+
 ### Architecture Overview
 
 ```
@@ -1313,6 +1402,10 @@ If needed for gradual rollout:
 ## Changelog
 
 2025-11-06 — **Planning Phase** — Action: Resolved all technical decisions — Result: Finalized technology stack (React + Vite + TypeScript + Zustand), project name ("Lottie Open Studio"), feature roadmap (MVP: Milestones 1-8, Post-MVP: Text layers M11, Gradients M12), integration plan with lottie-to-gif CLI, MIT license, desktop-only focus — By: Planning Team
+
+2025-11-06 — **TDD Methodology Added** — Action: Incorporated Test-Driven Development throughout plan — Result: Added TDD section to Implementation Notes, updated all milestones to require tests-first approach, minimum 80% coverage requirement, Vitest + React Testing Library as testing stack, co-located test files — By: Planning Team
+
+2025-11-06 — **Milestone 1 (Partial)** — Action: Completed initial project setup — Result: React 19 + Vite + TypeScript + Zustand configured, basic UI components created (Toolbar, Canvas, Timeline, LayersPanel, PropertiesPanel), project building and HMR working, committed to git — Status: Testing infrastructure still needed to complete milestone — By: Claude
 
 *This section will be updated as milestones are completed*
 
