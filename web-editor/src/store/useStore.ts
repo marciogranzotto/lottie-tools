@@ -35,7 +35,7 @@ interface Store {
   selectLayer: (layerId: string | undefined) => void;
 
   // Keyframe actions
-  addKeyframe: (layerId: string, property: AnimatableProperty, value: number | string) => void;
+  addKeyframe: (layerId: string, property: AnimatableProperty, value: number | string, easing?: string) => void;
   deleteKeyframe: (keyframeId: string) => void;
   updateKeyframe: (keyframeId: string, updates: Partial<Keyframe>) => void;
   getKeyframesForLayer: (layerId: string, property?: AnimatableProperty) => Keyframe[];
@@ -108,7 +108,7 @@ export const useStore = create<Store>((set) => ({
     })),
 
   // Keyframe actions
-  addKeyframe: (layerId, property, value) =>
+  addKeyframe: (layerId, property, value, easing = 'linear') =>
     set((state) => {
       if (!state.project) return state;
 
@@ -117,7 +117,7 @@ export const useStore = create<Store>((set) => ({
         time: state.project.currentTime,
         property,
         value,
-        easing: 'linear',
+        easing,
       };
 
       // Check if a keyframe already exists at this time for this layer/property

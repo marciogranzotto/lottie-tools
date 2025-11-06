@@ -17,6 +17,8 @@ export function PropertyEditor() {
   const [opacity, setOpacity] = useState(100); // Store as percentage 0-100
   const [fill, setFill] = useState('#ffffff');
   const [stroke, setStroke] = useState('#000000');
+  const [strokeWidth, setStrokeWidth] = useState(1);
+  const [selectedEasing, setSelectedEasing] = useState<string>('linear');
 
   const selectedLayer = project?.layers.find(
     (layer) => layer.id === project.selectedLayerId
@@ -104,6 +106,15 @@ export function PropertyEditor() {
       const strokeColor = layer.element.style.stroke;
       // Keep 'none' as is, or use the actual stroke color
       setStroke(strokeColor || 'none');
+    }
+
+    // Stroke Width
+    const strokeWidthKeyframes = getKeyframesForLayer(layer.id, 'strokeWidth');
+    if (strokeWidthKeyframes.length > 0) {
+      const interpolatedStrokeWidth = getValueAtTime(strokeWidthKeyframes, project.currentTime);
+      setStrokeWidth(interpolatedStrokeWidth);
+    } else {
+      setStrokeWidth(layer.element.style.strokeWidth ?? 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -299,9 +310,38 @@ export function PropertyEditor() {
     setStroke(color);
   };
 
+  const handleStrokeWidthChange = (width: number) => {
+    if (!selectedLayer || !project) return;
+
+    const updatedLayers = project.layers.map((layer) => {
+      if (layer.id === selectedLayer.id) {
+        return {
+          ...layer,
+          element: {
+            ...layer.element,
+            style: {
+              ...layer.element.style,
+              strokeWidth: width,
+            },
+          },
+        };
+      }
+      return layer;
+    });
+
+    useStore.setState({
+      project: {
+        ...project,
+        layers: updatedLayers,
+      },
+    });
+
+    setStrokeWidth(width);
+  };
+
   const handleAddKeyframe = (property: AnimatableProperty, value: number | string) => {
     if (!selectedLayer) return;
-    addKeyframe(selectedLayer.id, property, value);
+    addKeyframe(selectedLayer.id, property, value, selectedEasing);
   };
 
   const hasKeyframeAtCurrentTime = (property: AnimatableProperty): boolean => {
@@ -328,6 +368,26 @@ export function PropertyEditor() {
       <div className="property-editor-header">
         <h3>Properties</h3>
         <div className="property-editor-layer-name">{selectedLayer.name}</div>
+      </div>
+
+      <div className="property-editor-section">
+        <h4>Animation</h4>
+        <div className="property-row">
+          <label htmlFor="easing">Easing</label>
+          <select
+            id="easing"
+            value={selectedEasing}
+            onChange={(e) => setSelectedEasing(e.target.value)}
+          >
+            <option value="linear">Linear</option>
+            <option value="easeIn">Ease In</option>
+            <option value="easeOut">Ease Out</option>
+            <option value="easeInOut">Ease In-Out</option>
+          </select>
+          <span style={{ marginLeft: '8px', fontSize: '12px', color: '#888' }}>
+            For new keyframes
+          </span>
+        </div>
       </div>
 
       <div className="property-editor-section">
@@ -485,6 +545,26 @@ export function PropertyEditor() {
             aria-label={`Add keyframe for stroke`}
             data-has-keyframe={hasKeyframeAtCurrentTime('stroke')}
             className={hasKeyframeAtCurrentTime('stroke') ? 'has-keyframe' : ''}
+          >
+            ◆
+          </button>
+        </div>
+
+        <div className="property-row">
+          <label htmlFor="stroke-width">Stroke Width</label>
+          <input
+            id="stroke-width"
+            type="number"
+            step="0.5"
+            min="0"
+            value={strokeWidth}
+            onChange={(e) => handleStrokeWidthChange(Number(e.target.value))}
+          />
+          <button
+            onClick={() => handleAddKeyframe('strokeWidth', strokeWidth)}
+            aria-label={`Add keyframe for strokeWidth`}
+            data-has-keyframe={hasKeyframeAtCurrentTime('strokeWidth')}
+            className={hasKeyframeAtCurrentTime('strokeWidth') ? 'has-keyframe' : ''}
           >
             ◆
           </button>
