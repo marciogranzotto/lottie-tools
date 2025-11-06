@@ -2,14 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import './Timeline.css';
 import { useStore } from '../store/useStore';
 import { PlaybackEngine } from '../engine/PlaybackEngine';
+import type { AnimatableProperty } from '../models/Keyframe';
 
 export function Timeline() {
   const project = useStore((state) => state.project);
   const setCurrentTime = useStore((state) => state.setCurrentTime);
   const setIsPlaying = useStore((state) => state.setIsPlaying);
+  const getKeyframesForLayer = useStore((state) => state.getKeyframesForLayer);
+  const addKeyframe = useStore((state) => state.addKeyframe);
+  const deleteKeyframe = useStore((state) => state.deleteKeyframe);
+  const updateKeyframe = useStore((state) => state.updateKeyframe);
 
   const [loop, setLoop] = useState(false);
+  const [collapsedLayers, setCollapsedLayers] = useState<Set<string>>(new Set());
   const engineRef = useRef<PlaybackEngine | null>(null);
+  const tracksRef = useRef<HTMLDivElement>(null);
 
   // Initialize PlaybackEngine
   useEffect(() => {
@@ -101,6 +108,136 @@ export function Timeline() {
   };
 
   const currentFrame = project ? Math.floor(project.currentTime * project.fps) : 0;
+
+  // Helper: Toggle layer collapse state
+  const toggleLayerCollapse = (layerId: string) => {
+    setCollapsedLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(layerId)) {
+        next.delete(layerId);
+      } else {
+        next.add(layerId);
+      }
+      return next;
+    });
+  };
+
+  // Helper: Get all animated properties for a layer
+  const getAnimatedProperties = (layerId: string): AnimatableProperty[] => {
+    if (!project) return [];
+    const keyframes = getKeyframesForLayer(layerId);
+    const properties = new Set<AnimatableProperty>();
+    keyframes.forEach((kf) => properties.add(kf.property));
+    return Array.from(properties).sort();
+  };
+
+  // Helper: Get property display name
+  const getPropertyDisplayName = (property: AnimatableProperty): string => {
+    const names: Record<AnimatableProperty, string> = {
+      x: 'Position X',
+      y: 'Position Y',
+      rotation: 'Rotation',
+      scaleX: 'Scale X',
+      scaleY: 'Scale Y',
+      opacity: 'Opacity',
+      fill: 'Fill',
+      stroke: 'Stroke',
+      strokeWidth: 'Stroke Width',
+    };
+    return names[property] || property;
+  };
+
+  // Helper: Handle track click to add keyframe
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>, layerId: string, property: AnimatableProperty) => {
+    if (!project || !tracksRef.current) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const time = percentage * project.duration;
+
+    // Get current layer
+    const layer = project.layers.find((l) => l.id === layerId);
+    if (!layer) return;
+
+    // Get the current value for this property
+    let value: number | string = 0;
+    const transform = layer.element.transform;
+    const style = layer.element.style;
+
+    switch (property) {
+      case 'x':
+        value = transform.x;
+        break;
+      case 'y':
+        value = transform.y;
+        break;
+      case 'rotation':
+        value = transform.rotation;
+        break;
+      case 'scaleX':
+        value = transform.scaleX;
+        break;
+      case 'scaleY':
+        value = transform.scaleY;
+        break;
+      case 'opacity':
+        value = style.opacity ?? 1;
+        break;
+      case 'fill':
+        value = style.fill || '#000000';
+        break;
+      case 'stroke':
+        value = style.stroke || '#000000';
+        break;
+      case 'strokeWidth':
+        value = style.strokeWidth ?? 1;
+        break;
+    }
+
+    // Temporarily set time to the clicked position
+    const originalTime = project.currentTime;
+    setCurrentTime(time);
+
+    // Add keyframe
+    addKeyframe(layerId, property, value);
+
+    // Restore original time
+    setTimeout(() => setCurrentTime(originalTime), 0);
+  };
+
+  // Helper: Handle keyframe marker click
+  const handleKeyframeClick = (e: React.MouseEvent, keyframeId: string) => {
+    e.stopPropagation();
+    if (e.shiftKey) {
+      // Delete on shift+click
+      deleteKeyframe(keyframeId);
+    } else {
+      // Navigate to keyframe time
+      const keyframe = project?.keyframes.find((kf) => kf.id === keyframeId);
+      if (keyframe) {
+        setCurrentTime(keyframe.time);
+      }
+    }
+  };
+
+  // Helper: Get easing color
+  const getEasingColor = (easing: string): string => {
+    switch (easing) {
+      case 'easeIn':
+      case 'ease-in':
+        return '#ff9800';
+      case 'easeOut':
+      case 'ease-out':
+        return '#4caf50';
+      case 'easeInOut':
+      case 'ease-in-out':
+        return '#9c27b0';
+      case 'linear':
+      default:
+        return '#2196f3';
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -211,6 +348,88 @@ export function Timeline() {
           className="timeline-slider"
         />
       </div>
+
+      {/* Property Tracks Visualization */}
+      {project && project.layers.length > 0 && (
+        <div className="timeline-tracks" ref={tracksRef}>
+          <div className="timeline-tracks-header">
+            <span>Property Tracks</span>
+            <span className="timeline-tracks-hint">
+              Click track to add keyframe · Shift+Click keyframe to delete
+            </span>
+          </div>
+          {project.layers.map((layer) => {
+            const animatedProps = getAnimatedProperties(layer.id);
+            const isCollapsed = collapsedLayers.has(layer.id);
+
+            if (animatedProps.length === 0) return null;
+
+            return (
+              <div key={layer.id} className="timeline-layer-group">
+                <div className="timeline-layer-header" onClick={() => toggleLayerCollapse(layer.id)}>
+                  <span className="timeline-layer-collapse">
+                    {isCollapsed ? '▶' : '▼'}
+                  </span>
+                  <span className="timeline-layer-name">{layer.name}</span>
+                  <span className="timeline-layer-props-count">
+                    {animatedProps.length} {animatedProps.length === 1 ? 'property' : 'properties'}
+                  </span>
+                </div>
+
+                {!isCollapsed && animatedProps.map((property) => {
+                  const keyframes = getKeyframesForLayer(layer.id, property);
+
+                  return (
+                    <div key={`${layer.id}-${property}`} className="timeline-track">
+                      <div className="timeline-track-label">
+                        {getPropertyDisplayName(property)}
+                      </div>
+                      <div
+                        className="timeline-track-content"
+                        onClick={(e) => handleTrackClick(e, layer.id, property)}
+                      >
+                        {/* Time Grid */}
+                        <div className="timeline-track-grid">
+                          {Array.from({ length: Math.ceil(project.duration) + 1 }, (_, i) => (
+                            <div
+                              key={i}
+                              className="timeline-track-grid-line"
+                              style={{ left: `${(i / project.duration) * 100}%` }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Keyframe Markers */}
+                        {keyframes.map((kf) => {
+                          const position = (kf.time / project.duration) * 100;
+                          return (
+                            <div
+                              key={kf.id}
+                              className="timeline-keyframe"
+                              style={{
+                                left: `${position}%`,
+                                background: getEasingColor(kf.easing),
+                              }}
+                              onClick={(e) => handleKeyframeClick(e, kf.id)}
+                              title={`Time: ${kf.time.toFixed(2)}s\nEasing: ${kf.easing}\nShift+Click to delete`}
+                            />
+                          );
+                        })}
+
+                        {/* Current Time Indicator */}
+                        <div
+                          className="timeline-track-playhead"
+                          style={{ left: `${(project.currentTime / project.duration) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
