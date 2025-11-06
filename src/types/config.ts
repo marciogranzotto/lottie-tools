@@ -39,6 +39,9 @@ export interface ConversionConfig {
   /** Enable verbose logging (optional, default: false) */
   verbose?: boolean;
 
+  /** Dry run mode - parse and show settings without converting (optional, default: false) */
+  dryRun?: boolean;
+
   /** Timeout for rendering in milliseconds (optional, default: 60000) */
   timeout?: number;
 

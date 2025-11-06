@@ -39,6 +39,7 @@ program
   .option('--repeat <times>', 'Repeat count (0 = no repeat, n = repeat n times)', parseInt)
   .option('--timeout <ms>', 'Rendering timeout in milliseconds (default: 60000)', parseInt)
   .option('--verbose', 'Enable verbose logging', false)
+  .option('--dry-run', 'Preview conversion settings without actually converting', false)
   .option('--no-progress', 'Disable progress indicators', false)
   .addHelpText('after', `
 Examples:
@@ -52,6 +53,7 @@ Examples:
   $ lottie-to-gif animation.json --no-loop
   $ lottie-to-gif animation.json --repeat 3
   $ lottie-to-gif animation.json --verbose
+  $ lottie-to-gif animation.json --dry-run
 
 For more information, visit: https://github.com/anthropics/lottie-tools
   `)
@@ -70,6 +72,7 @@ For more information, visit: https://github.com/anthropics/lottie-tools
         dither: options.dither,
         timeout: options.timeout,
         verbose: options.verbose,
+        dryRun: options.dryRun,
       };
 
       // Handle repeat/loop options

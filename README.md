@@ -81,6 +81,7 @@ lottie-to-gif <input> [options]
 | `--repeat <times>` | Repeat count (0 = no repeat, n = repeat n times) | -1 (loop) |
 | `--timeout <ms>` | Rendering timeout in milliseconds | 60000 |
 | `--verbose` | Enable verbose logging | false |
+| `--dry-run` | Preview conversion settings without converting | false |
 | `--no-progress` | Disable progress indicators | false |
 | `-v, --version` | Output version number | - |
 | `-h, --help` | Display help information | - |
@@ -118,6 +119,10 @@ lottie-to-gif animation.json --repeat 3
 # Verbose mode for debugging
 lottie-to-gif animation.json --verbose
 
+# Preview conversion without actually converting (dry run)
+lottie-to-gif animation.json --dry-run
+lottie-to-gif animation.json --scaled 2 --bg FFFFFF --dry-run
+
 # Custom timeout for complex animations
 lottie-to-gif complex.json --timeout 120000
 ```
@@ -139,6 +144,7 @@ async function convert() {
     quality: 85,
     dither: true,
     verbose: true,
+    dryRun: false,                // Set to true to preview without converting
     onProgress: (progress) => {
       console.log(`${progress.phase}: ${progress.percentage}%`);
     }
@@ -168,6 +174,7 @@ interface ConversionConfig {
   repeat?: number;                  // Optional: Repeat count (-1 = loop, 0 = no repeat)
   timeout?: number;                 // Optional: Timeout in ms
   verbose?: boolean;                // Optional: Verbose logging
+  dryRun?: boolean;                 // Optional: Preview settings without converting
   onProgress?: (progress) => void;  // Optional: Progress callback
 }
 ```
@@ -206,6 +213,11 @@ interface ConversionConfig {
 ```
 
 ## Performance Tips
+
+- **Preview first** - Use dry-run to check settings before processing
+  ```bash
+  lottie-to-gif animation.json --scaled 2 --dry-run
+  ```
 
 - **Lower frame rate** - Reduces file size and conversion time
   ```bash

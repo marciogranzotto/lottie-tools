@@ -72,7 +72,7 @@ function hexToCSS(hex: string): string {
  */
 export async function convertLottieToGif(config: ConversionConfig): Promise<ConversionResult> {
   const startTime = Date.now();
-  const logger = new Logger(config.verbose || false);
+  const logger = new Logger(config.verbose || config.dryRun || false);
   let parseTime = 0;
   let renderTime = 0;
   let encodeTime = 0;
@@ -162,6 +162,66 @@ export async function convertLottieToGif(config: ConversionConfig): Promise<Conv
     const expectedFrames = Math.ceil(
       (parseResult.metadata.totalFrames * fps) / parseResult.metadata.frameRate
     );
+
+    // Dry run mode: show settings and exit without converting
+    if (config.dryRun) {
+      const dryRunTime = Date.now() - startTime;
+      logger.log('');
+      logger.log('=== DRY RUN MODE ===');
+      logger.log(`Input: ${config.input}`);
+      logger.log(`Output: ${outputPath}`);
+      logger.log('');
+      logger.log('Source Animation:');
+      logger.log(`  Dimensions: ${parseResult.metadata.width}x${parseResult.metadata.height}`);
+      logger.log(`  Frame Rate: ${parseResult.metadata.frameRate} fps`);
+      logger.log(`  Duration: ${parseResult.metadata.duration.toFixed(2)}s`);
+      logger.log(`  Total Frames: ${parseResult.metadata.totalFrames}`);
+      if (parseResult.metadata.backgroundColor) {
+        logger.log(`  Background Color: ${parseResult.metadata.backgroundColor}`);
+      }
+      logger.log('');
+      logger.log('Output Settings:');
+      logger.log(`  Dimensions: ${width}x${height}${config.scaled ? ` (${config.scaled}x scale)` : ''}`);
+      logger.log(`  Frame Rate: ${fps} fps`);
+      logger.log(`  Frame Count: ${expectedFrames}`);
+      logger.log(`  Background: ${backgroundColor}`);
+      logger.log(`  Quality: ${quality}`);
+      logger.log(`  Dithering: ${dither ? 'enabled' : 'disabled'}`);
+      logger.log(`  Loop: ${repeat === -1 ? 'forever' : repeat === 0 ? 'once' : `${repeat + 1} times`}`);
+      logger.log('');
+      logger.log('Estimated Processing:');
+      logger.log(`  Rendering: ~${(expectedFrames * 0.1).toFixed(1)}s (${expectedFrames} frames)`);
+      logger.log(`  Encoding: ~${(expectedFrames * 0.01).toFixed(1)}s`);
+      logger.log(`  Total: ~${((expectedFrames * 0.11) + 0.5).toFixed(1)}s`);
+      logger.log('');
+      logger.log(`✓ Dry run completed in ${(dryRunTime / 1000).toFixed(2)}s`);
+      logger.log('');
+
+      // Return a dry-run result
+      return {
+        inputPath: config.input,
+        outputPath,
+        fileSize: 0,
+        totalTime: dryRunTime,
+        parseTime,
+        renderTime: 0,
+        encodeTime: 0,
+        source: {
+          width: parseResult.metadata.width,
+          height: parseResult.metadata.height,
+          frameRate: parseResult.metadata.frameRate,
+          duration: parseResult.metadata.duration,
+          totalFrames: parseResult.metadata.totalFrames,
+        },
+        output: {
+          width,
+          height,
+          frameRate: fps,
+          frameCount: expectedFrames,
+          fileSize: 0,
+        },
+      };
+    }
 
     // Report progress: rendering
     if (config.onProgress) {
