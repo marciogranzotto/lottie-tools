@@ -74,6 +74,8 @@ export function FileImport() {
           currentTime: 0,
           isPlaying: false,
           layers: parseResult.layers,
+          selectedLayerId: undefined,
+          keyframes: [],
         });
       }
 
