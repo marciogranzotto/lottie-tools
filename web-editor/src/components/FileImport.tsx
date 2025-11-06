@@ -58,9 +58,11 @@ export function FileImport() {
 
       // Create or update project
       if (project) {
-        // Merge with existing project
+        // Merge with existing project, updating dimensions if available
         setProject({
           ...project,
+          width: parseResult.width || project.width,
+          height: parseResult.height || project.height,
           layers: [...project.layers, ...parseResult.layers],
         });
       } else {
