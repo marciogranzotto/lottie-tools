@@ -7,7 +7,10 @@ export type AnimatableProperty =
   | 'scaleX'
   | 'scaleY'
   | 'rotation'
-  | 'opacity';
+  | 'opacity'
+  | 'fill'
+  | 'stroke'
+  | 'strokeWidth';
 
 /**
  * Easing function types

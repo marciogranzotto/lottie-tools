@@ -26,9 +26,13 @@ export function Canvas() {
     project.layers.forEach((layer) => {
       if (!layer.visible) return;
 
-      // Get interpolated position based on keyframes
+      // Get interpolated values based on keyframes
       const xKeyframes = getKeyframesForLayer(layer.id, 'x');
       const yKeyframes = getKeyframesForLayer(layer.id, 'y');
+      const rotationKeyframes = getKeyframesForLayer(layer.id, 'rotation');
+      const scaleXKeyframes = getKeyframesForLayer(layer.id, 'scaleX');
+      const scaleYKeyframes = getKeyframesForLayer(layer.id, 'scaleY');
+      const opacityKeyframes = getKeyframesForLayer(layer.id, 'opacity');
 
       const x =
         xKeyframes.length > 0
@@ -40,16 +44,34 @@ export function Canvas() {
           ? getValueAtTime(yKeyframes, project.currentTime)
           : layer.element.transform.y;
 
+      const rotation =
+        rotationKeyframes.length > 0
+          ? getValueAtTime(rotationKeyframes, project.currentTime)
+          : layer.element.transform.rotation;
+
+      const scaleX =
+        scaleXKeyframes.length > 0
+          ? getValueAtTime(scaleXKeyframes, project.currentTime)
+          : layer.element.transform.scaleX;
+
+      const scaleY =
+        scaleYKeyframes.length > 0
+          ? getValueAtTime(scaleYKeyframes, project.currentTime)
+          : layer.element.transform.scaleY;
+
+      const opacity =
+        opacityKeyframes.length > 0
+          ? getValueAtTime(opacityKeyframes, project.currentTime)
+          : (layer.element.style.opacity ?? 1);
+
       // Draw based on element type
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate((layer.element.transform.rotation * Math.PI) / 180);
-      ctx.scale(layer.element.transform.scaleX, layer.element.transform.scaleY);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(scaleX, scaleY);
 
       // Set opacity
-      if (layer.element.style.opacity !== undefined) {
-        ctx.globalAlpha = layer.element.style.opacity;
-      }
+      ctx.globalAlpha = opacity;
 
       // Render based on element type
       if (layer.element.type === 'rect') {
