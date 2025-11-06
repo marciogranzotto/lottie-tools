@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PropertyEditor } from './PropertyEditor';
 import { useStore } from '../store/useStore';
@@ -377,6 +377,285 @@ describe('PropertyEditor', () => {
       const opacityInput = screen.getByRole('spinbutton', { name: /opacity/i }) as HTMLInputElement;
       // At time=1, halfway between 0 and 2, opacity should be 50% (0.5 in decimal)
       expect(Number(opacityInput.value)).toBeCloseTo(50, 0);
+    });
+  });
+
+  describe('Color Properties', () => {
+    it('should display fill color picker', () => {
+      render(<PropertyEditor />);
+      const fillInput = screen.getByDisplayValue('#ff0000');
+      expect(fillInput).toBeInTheDocument();
+      expect(fillInput).toHaveAttribute('type', 'color');
+    });
+
+    it('should display stroke color picker', () => {
+      render(<PropertyEditor />);
+      // mockLayer has no stroke set, so it defaults to 'none', which displays as #000000
+      const colorInputs = screen.getAllByDisplayValue('#000000');
+      const strokeInput = colorInputs.find(input => input.id === 'stroke');
+      expect(strokeInput).toBeInTheDocument();
+      expect(strokeInput).toHaveAttribute('type', 'color');
+    });
+
+    it('should show current fill color', () => {
+      render(<PropertyEditor />);
+      const fillInput = screen.getByDisplayValue('#ff0000') as HTMLInputElement;
+      expect(fillInput.value).toBe('#ff0000');
+      expect(fillInput).toHaveAttribute('id', 'fill');
+    });
+
+    it('should update fill color when changed', async () => {
+      render(<PropertyEditor />);
+
+      const fillInput = screen.getByDisplayValue('#ff0000') as HTMLInputElement;
+      // Color inputs don't support clear/type, we use fireEvent.change
+      fireEvent.change(fillInput, { target: { value: '#00ff00' } });
+
+      const state = useStore.getState();
+      const layer = state.project?.layers.find(l => l.id === 'layer-1');
+      expect(layer?.element.style.fill).toBe('#00ff00');
+    });
+
+    it('should add keyframe for fill color', async () => {
+      const user = userEvent.setup();
+      render(<PropertyEditor />);
+
+      const buttons = screen.getAllByRole('button', { name: /add keyframe.*fill/i });
+      await user.click(buttons[0]);
+
+      const state = useStore.getState();
+      const fillKeyframes = state.project?.keyframes.filter(kf => kf.property === 'fill');
+      expect(fillKeyframes?.length).toBe(1);
+      expect(fillKeyframes?.[0].value).toBe('#ff0000');
+    });
+
+    it('should handle fill="none" with disabled input', () => {
+      const layerWithNoFill = {
+        ...mockLayer,
+        element: {
+          ...mockLayer.element,
+          style: {
+            ...mockLayer.element.style,
+            fill: 'none',
+          },
+        },
+      };
+
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [layerWithNoFill],
+          selectedLayerId: 'layer-1',
+          keyframes: [],
+        },
+      });
+
+      render(<PropertyEditor />);
+      // When fill is 'none', the input shows #000000 but is disabled
+      const colorInputs = screen.getAllByDisplayValue('#000000');
+      const fillInput = colorInputs.find(input => input.id === 'fill') as HTMLInputElement;
+      expect(fillInput).toBeDisabled();
+      expect(fillInput).toHaveAttribute('id', 'fill');
+      expect(screen.getAllByText('Enable').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should enable fill when "Enable" button clicked', async () => {
+      const user = userEvent.setup();
+      const layerWithNoFill = {
+        ...mockLayer,
+        element: {
+          ...mockLayer.element,
+          style: {
+            ...mockLayer.element.style,
+            fill: 'none',
+          },
+        },
+      };
+
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [layerWithNoFill],
+          selectedLayerId: 'layer-1',
+          keyframes: [],
+        },
+      });
+
+      render(<PropertyEditor />);
+      const enableButtons = screen.getAllByText('Enable');
+      await user.click(enableButtons[0]); // Click first Enable button (for fill)
+
+      const state = useStore.getState();
+      const layer = state.project?.layers.find(l => l.id === 'layer-1');
+      expect(layer?.element.style.fill).toBe('#000000');
+    });
+
+    it('should animate fill color with interpolation', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 1,
+          isPlaying: false,
+          layers: [mockLayer],
+          selectedLayerId: 'layer-1',
+          keyframes: [
+            {
+              id: 'kf-1',
+              time: 0,
+              property: 'fill',
+              value: '#ff0000',
+              easing: 'linear',
+              layerId: 'layer-1',
+            } as any,
+            {
+              id: 'kf-2',
+              time: 2,
+              property: 'fill',
+              value: '#0000ff',
+              easing: 'linear',
+              layerId: 'layer-1',
+            } as any,
+          ],
+        },
+      });
+
+      render(<PropertyEditor />);
+      // At time=1, halfway between red (#ff0000) and blue (#0000ff), should be purple (#800080)
+      const fillInput = screen.getByDisplayValue('#800080') as HTMLInputElement;
+      expect(fillInput.value).toBe('#800080');
+      expect(fillInput).toHaveAttribute('id', 'fill');
+    });
+
+    it('should update stroke color when changed', () => {
+      // Update mockLayer to have a stroke color
+      const layerWithStroke = {
+        ...mockLayer,
+        element: {
+          ...mockLayer.element,
+          style: {
+            ...mockLayer.element.style,
+            stroke: '#0000ff',
+          },
+        },
+      };
+
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [layerWithStroke],
+          selectedLayerId: 'layer-1',
+          keyframes: [],
+        },
+      });
+
+      render(<PropertyEditor />);
+
+      const colorInputs = screen.getAllByDisplayValue('#0000ff');
+      const strokeInput = colorInputs.find(input => input.id === 'stroke') as HTMLInputElement;
+      fireEvent.change(strokeInput, { target: { value: '#ff00ff' } });
+
+      const state = useStore.getState();
+      const layer = state.project?.layers.find(l => l.id === 'layer-1');
+      expect(layer?.element.style.stroke).toBe('#ff00ff');
+    });
+
+    it('should enable stroke when "Enable" button clicked', async () => {
+      const user = userEvent.setup();
+      const layerWithNoStroke = {
+        ...mockLayer,
+        element: {
+          ...mockLayer.element,
+          style: {
+            ...mockLayer.element.style,
+            stroke: 'none',
+          },
+        },
+      };
+
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [layerWithNoStroke],
+          selectedLayerId: 'layer-1',
+          keyframes: [],
+        },
+      });
+
+      render(<PropertyEditor />);
+      const enableButtons = screen.getAllByText('Enable');
+      // Click the stroke Enable button (should be the second one)
+      await user.click(enableButtons[enableButtons.length - 1]);
+
+      const state = useStore.getState();
+      const layer = state.project?.layers.find(l => l.id === 'layer-1');
+      expect(layer?.element.style.stroke).toBe('#000000');
+    });
+
+    it('should add keyframe for stroke color', async () => {
+      const user = userEvent.setup();
+      const layerWithStroke = {
+        ...mockLayer,
+        element: {
+          ...mockLayer.element,
+          style: {
+            ...mockLayer.element.style,
+            stroke: '#00ff00',
+          },
+        },
+      };
+
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [layerWithStroke],
+          selectedLayerId: 'layer-1',
+          keyframes: [],
+        },
+      });
+
+      render(<PropertyEditor />);
+
+      const buttons = screen.getAllByRole('button', { name: /add keyframe.*stroke/i });
+      await user.click(buttons[0]);
+
+      const state = useStore.getState();
+      const strokeKeyframes = state.project?.keyframes.filter(kf => kf.property === 'stroke');
+      expect(strokeKeyframes?.length).toBe(1);
+      expect(strokeKeyframes?.[0].value).toBe('#00ff00');
     });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Timeline } from './Timeline';
 import { useStore } from '../store/useStore';
@@ -370,6 +370,109 @@ describe('Timeline', () => {
       await user.keyboard('{End}');
 
       expect(useStore.getState().project?.currentTime).toBe(5);
+    });
+
+    it('should ignore keyboard shortcuts when input field is focused', async () => {
+      const user = userEvent.setup();
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 1,
+          isPlaying: false,
+          layers: [],
+        },
+      });
+
+      render(<Timeline />);
+      const slider = screen.getByRole('slider');
+
+      // Focus on the slider input
+      await user.click(slider);
+
+      // Try to trigger keyboard shortcuts while input is focused
+      await user.keyboard(' '); // Space should not toggle playback
+
+      // The playback state should not change when input is focused
+      expect(useStore.getState().project?.isPlaying).toBe(false);
+    });
+
+    it('should ignore keyboard shortcuts when textarea is focused', async () => {
+      const user = userEvent.setup();
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 5,
+          currentTime: 1,
+          isPlaying: false,
+          layers: [],
+        },
+      });
+
+      // Create a textarea element to test
+      const container = document.createElement('div');
+      const textarea = document.createElement('textarea');
+      container.appendChild(textarea);
+      document.body.appendChild(container);
+
+      render(<Timeline />);
+
+      // Focus on the textarea
+      textarea.focus();
+
+      // Try to trigger keyboard shortcuts while textarea is focused
+      await user.keyboard(' ');
+
+      // The playback state should not change when textarea is focused
+      expect(useStore.getState().project?.isPlaying).toBe(false);
+
+      // Cleanup
+      document.body.removeChild(container);
+    });
+  });
+
+  describe('Timeline Slider', () => {
+    it('should update time when slider value changes', async () => {
+      render(<Timeline />);
+      const slider = screen.getByRole('slider') as HTMLInputElement;
+
+      // Simulate slider change
+      fireEvent.change(slider, { target: { value: '2.5' } });
+
+      // Check that the time was updated
+      const state = useStore.getState();
+      expect(state.project?.currentTime).toBe(2.5);
+    });
+
+    it('should handle boundary values for slider', async () => {
+      render(<Timeline />);
+      const slider = screen.getByRole('slider') as HTMLInputElement;
+
+      // Test minimum value (0)
+      fireEvent.change(slider, { target: { value: '0' } });
+      expect(useStore.getState().project?.currentTime).toBe(0);
+
+      // Test maximum value (duration)
+      fireEvent.change(slider, { target: { value: '5' } });
+      expect(useStore.getState().project?.currentTime).toBe(5);
+    });
+
+    it('should handle decimal values for slider', async () => {
+      render(<Timeline />);
+      const slider = screen.getByRole('slider') as HTMLInputElement;
+
+      // Test decimal values
+      fireEvent.change(slider, { target: { value: '2.75' } });
+      expect(useStore.getState().project?.currentTime).toBe(2.75);
+
+      fireEvent.change(slider, { target: { value: '0.5' } });
+      expect(useStore.getState().project?.currentTime).toBe(0.5);
     });
   });
 });
