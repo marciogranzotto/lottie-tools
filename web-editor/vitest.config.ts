@@ -16,6 +16,8 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.config.{ts,js}',
         '**/main.tsx',
+        '**/Canvas.tsx', // Exclude Canvas - rendering logic can't be tested in jsdom
+        '**/*.css', // Exclude CSS files from coverage
       ],
       thresholds: {
         lines: 80,

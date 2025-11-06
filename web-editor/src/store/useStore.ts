@@ -174,10 +174,12 @@ export const useStore = create<Store>((set) => ({
     const state = useStore.getState();
     if (!state.project) return [];
 
-    return state.project.keyframes.filter((kf) => {
-      const layerMatches = (kf as any).layerId === layerId;
-      const propertyMatches = property ? kf.property === property : true;
-      return layerMatches && propertyMatches;
-    });
+    return state.project.keyframes
+      .filter((kf) => {
+        const layerMatches = (kf as any).layerId === layerId;
+        const propertyMatches = property ? kf.property === property : true;
+        return layerMatches && propertyMatches;
+      })
+      .sort((a, b) => a.time - b.time);
   },
 }));
