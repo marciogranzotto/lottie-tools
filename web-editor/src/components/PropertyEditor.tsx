@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './PropertyEditor.css';
 import { useStore } from '../store/useStore';
-import { getValueAtTime } from '../engine/Interpolation';
+import { getValueAtTime, getColorAtTime } from '../engine/Interpolation';
 import type { AnimatableProperty } from '../models/Keyframe';
 
 export function PropertyEditor() {
@@ -24,73 +24,92 @@ export function PropertyEditor() {
 
   // Update position values based on current time and keyframes
   useEffect(() => {
-    if (!selectedLayer || !project) return;
+    if (!project?.selectedLayerId || !project) return;
+
+    // Find the selected layer inside the effect
+    const layer = project.layers.find(l => l.id === project.selectedLayerId);
+    if (!layer) return;
 
     // Get keyframes for this layer
-    const xKeyframes = getKeyframesForLayer(selectedLayer.id, 'x');
-    const yKeyframes = getKeyframesForLayer(selectedLayer.id, 'y');
+    const xKeyframes = getKeyframesForLayer(layer.id, 'x');
+    const yKeyframes = getKeyframesForLayer(layer.id, 'y');
 
     // If we have keyframes, calculate interpolated values
     if (xKeyframes.length > 0) {
       const interpolatedX = getValueAtTime(xKeyframes, project.currentTime);
       setPositionX(interpolatedX);
     } else {
-      setPositionX(selectedLayer.element.transform.x);
+      setPositionX(layer.element.transform.x);
     }
 
     if (yKeyframes.length > 0) {
       const interpolatedY = getValueAtTime(yKeyframes, project.currentTime);
       setPositionY(interpolatedY);
     } else {
-      setPositionY(selectedLayer.element.transform.y);
+      setPositionY(layer.element.transform.y);
     }
 
     // Rotation
-    const rotationKeyframes = getKeyframesForLayer(selectedLayer.id, 'rotation');
+    const rotationKeyframes = getKeyframesForLayer(layer.id, 'rotation');
     if (rotationKeyframes.length > 0) {
       const interpolatedRotation = getValueAtTime(rotationKeyframes, project.currentTime);
       setRotation(interpolatedRotation);
     } else {
-      setRotation(selectedLayer.element.transform.rotation);
+      setRotation(layer.element.transform.rotation);
     }
 
     // Scale X
-    const scaleXKeyframes = getKeyframesForLayer(selectedLayer.id, 'scaleX');
+    const scaleXKeyframes = getKeyframesForLayer(layer.id, 'scaleX');
     if (scaleXKeyframes.length > 0) {
       const interpolatedScaleX = getValueAtTime(scaleXKeyframes, project.currentTime);
       setScaleX(interpolatedScaleX);
     } else {
-      setScaleX(selectedLayer.element.transform.scaleX);
+      setScaleX(layer.element.transform.scaleX);
     }
 
     // Scale Y
-    const scaleYKeyframes = getKeyframesForLayer(selectedLayer.id, 'scaleY');
+    const scaleYKeyframes = getKeyframesForLayer(layer.id, 'scaleY');
     if (scaleYKeyframes.length > 0) {
       const interpolatedScaleY = getValueAtTime(scaleYKeyframes, project.currentTime);
       setScaleY(interpolatedScaleY);
     } else {
-      setScaleY(selectedLayer.element.transform.scaleY);
+      setScaleY(layer.element.transform.scaleY);
     }
 
     // Opacity (convert from 0-1 to 0-100 for display)
-    const opacityKeyframes = getKeyframesForLayer(selectedLayer.id, 'opacity');
+    const opacityKeyframes = getKeyframesForLayer(layer.id, 'opacity');
     if (opacityKeyframes.length > 0) {
       const interpolatedOpacity = getValueAtTime(opacityKeyframes, project.currentTime);
       setOpacity(Math.round(interpolatedOpacity * 100));
     } else {
-      setOpacity(Math.round((selectedLayer.element.style.opacity ?? 1) * 100));
+      setOpacity(Math.round((layer.element.style.opacity ?? 1) * 100));
     }
 
     // Fill and Stroke colors (handle 'none' case)
-    const fillColor = selectedLayer.element.style.fill;
-    const strokeColor = selectedLayer.element.style.stroke;
-    setFill(fillColor && fillColor !== 'none' ? fillColor : '#ffffff');
-    setStroke(strokeColor && strokeColor !== 'none' ? strokeColor : '#000000');
+    const fillKeyframes = getKeyframesForLayer(layer.id, 'fill');
+    if (fillKeyframes.length > 0) {
+      const interpolatedFill = getColorAtTime(fillKeyframes, project.currentTime);
+      setFill(interpolatedFill);
+    } else {
+      const fillColor = layer.element.style.fill;
+      // Keep 'none' as is, or use the actual fill color, or default to transparent black
+      setFill(fillColor || 'none');
+    }
+
+    const strokeKeyframes = getKeyframesForLayer(layer.id, 'stroke');
+    if (strokeKeyframes.length > 0) {
+      const interpolatedStroke = getColorAtTime(strokeKeyframes, project.currentTime);
+      setStroke(interpolatedStroke);
+    } else {
+      const strokeColor = layer.element.style.stroke;
+      // Keep 'none' as is, or use the actual stroke color
+      setStroke(strokeColor || 'none');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    selectedLayer,
+    project?.selectedLayerId,
     project?.currentTime,
-    project?.keyframes,
-    getKeyframesForLayer,
+    project?.keyframes?.length, // Use length instead of the array to prevent unnecessary re-renders
   ]);
 
   const handlePositionChange = (axis: 'x' | 'y', value: number) => {
@@ -280,7 +299,7 @@ export function PropertyEditor() {
     setStroke(color);
   };
 
-  const handleAddKeyframe = (property: AnimatableProperty, value: number) => {
+  const handleAddKeyframe = (property: AnimatableProperty, value: number | string) => {
     if (!selectedLayer) return;
     addKeyframe(selectedLayer.id, property, value);
   };
@@ -416,12 +435,29 @@ export function PropertyEditor() {
           <input
             id="fill"
             type="color"
-            value={fill}
+            value={fill === 'none' ? '#000000' : fill}
             onChange={(e) => handleFillChange(e.target.value)}
+            disabled={fill === 'none'}
           />
           <span style={{ marginLeft: '8px', fontSize: '12px', color: '#888' }}>
             {fill}
           </span>
+          {fill === 'none' && (
+            <button
+              onClick={() => handleFillChange('#000000')}
+              style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px' }}
+            >
+              Enable
+            </button>
+          )}
+          <button
+            onClick={() => handleAddKeyframe('fill', fill)}
+            aria-label={`Add keyframe for fill`}
+            data-has-keyframe={hasKeyframeAtCurrentTime('fill')}
+            className={hasKeyframeAtCurrentTime('fill') ? 'has-keyframe' : ''}
+          >
+            ◆
+          </button>
         </div>
 
         <div className="property-row">
@@ -429,12 +465,29 @@ export function PropertyEditor() {
           <input
             id="stroke"
             type="color"
-            value={stroke}
+            value={stroke === 'none' ? '#000000' : stroke}
             onChange={(e) => handleStrokeChange(e.target.value)}
+            disabled={stroke === 'none'}
           />
           <span style={{ marginLeft: '8px', fontSize: '12px', color: '#888' }}>
             {stroke}
           </span>
+          {stroke === 'none' && (
+            <button
+              onClick={() => handleStrokeChange('#000000')}
+              style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px' }}
+            >
+              Enable
+            </button>
+          )}
+          <button
+            onClick={() => handleAddKeyframe('stroke', stroke)}
+            aria-label={`Add keyframe for stroke`}
+            data-has-keyframe={hasKeyframeAtCurrentTime('stroke')}
+            className={hasKeyframeAtCurrentTime('stroke') ? 'has-keyframe' : ''}
+          >
+            ◆
+          </button>
         </div>
 
         <div className="property-row">

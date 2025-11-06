@@ -35,7 +35,7 @@ interface Store {
   selectLayer: (layerId: string | undefined) => void;
 
   // Keyframe actions
-  addKeyframe: (layerId: string, property: AnimatableProperty, value: number) => void;
+  addKeyframe: (layerId: string, property: AnimatableProperty, value: number | string) => void;
   deleteKeyframe: (keyframeId: string) => void;
   updateKeyframe: (keyframeId: string, updates: Partial<Keyframe>) => void;
   getKeyframesForLayer: (layerId: string, property?: AnimatableProperty) => Keyframe[];

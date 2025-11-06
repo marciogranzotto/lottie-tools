@@ -15,7 +15,7 @@ export type AnimatableProperty =
 /**
  * Easing function types
  */
-export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'ease-in' | 'ease-out' | 'ease-in-out';
 
 /**
  * Value type for keyframes (can be number or string for colors)

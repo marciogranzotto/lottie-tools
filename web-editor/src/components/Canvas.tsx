@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import './Canvas.css';
 import { useStore } from '../store/useStore';
-import { getValueAtTime } from '../engine/Interpolation';
+import { getValueAtTime, getColorAtTime } from '../engine/Interpolation';
 import type { RectElement, CircleElement, EllipseElement, PathElement, PolygonElement, PolylineElement } from '../models/Element';
 
 export function Canvas() {
@@ -65,6 +65,20 @@ export function Canvas() {
           ? getValueAtTime(opacityKeyframes, project.currentTime)
           : (layer.element.style.opacity ?? 1);
 
+      // Get interpolated colors
+      const fillKeyframes = getKeyframesForLayer(layer.id, 'fill');
+      const strokeKeyframes = getKeyframesForLayer(layer.id, 'stroke');
+
+      const fill =
+        fillKeyframes.length > 0
+          ? getColorAtTime(fillKeyframes, project.currentTime)
+          : layer.element.style.fill;
+
+      const stroke =
+        strokeKeyframes.length > 0
+          ? getColorAtTime(strokeKeyframes, project.currentTime)
+          : layer.element.style.stroke;
+
       // Draw based on element type
       ctx.save();
       ctx.translate(x, y);
@@ -77,11 +91,16 @@ export function Canvas() {
       // Render based on element type
       if (layer.element.type === 'rect') {
         const rect = layer.element as RectElement;
-        ctx.fillStyle = layer.element.style.fill || '#ffffff';
-        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
 
-        if (layer.element.style.stroke) {
-          ctx.strokeStyle = layer.element.style.stroke;
+        // Only fill if there's a valid fill color (not 'none')
+        if (fill && fill !== 'none') {
+          ctx.fillStyle = fill;
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        }
+
+        // Only stroke if there's a valid stroke color (not 'none')
+        if (stroke && stroke !== 'none') {
+          ctx.strokeStyle = stroke;
           ctx.lineWidth = layer.element.style.strokeWidth || 1;
           ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
         }
@@ -90,13 +109,13 @@ export function Canvas() {
         ctx.beginPath();
         ctx.arc(circle.cx, circle.cy, circle.r, 0, Math.PI * 2);
 
-        if (layer.element.style.fill) {
-          ctx.fillStyle = layer.element.style.fill;
+        if (fill && fill !== 'none') {
+          ctx.fillStyle = fill;
           ctx.fill();
         }
 
-        if (layer.element.style.stroke) {
-          ctx.strokeStyle = layer.element.style.stroke;
+        if (stroke && stroke !== 'none') {
+          ctx.strokeStyle = stroke;
           ctx.lineWidth = layer.element.style.strokeWidth || 1;
           ctx.stroke();
         }
@@ -105,13 +124,13 @@ export function Canvas() {
         ctx.beginPath();
         ctx.ellipse(ellipse.cx, ellipse.cy, ellipse.rx, ellipse.ry, 0, 0, Math.PI * 2);
 
-        if (layer.element.style.fill) {
-          ctx.fillStyle = layer.element.style.fill;
+        if (fill && fill !== 'none') {
+          ctx.fillStyle = fill;
           ctx.fill();
         }
 
-        if (layer.element.style.stroke) {
-          ctx.strokeStyle = layer.element.style.stroke;
+        if (stroke && stroke !== 'none') {
+          ctx.strokeStyle = stroke;
           ctx.lineWidth = layer.element.style.strokeWidth || 1;
           ctx.stroke();
         }
@@ -119,13 +138,13 @@ export function Canvas() {
         const path = layer.element as PathElement;
         const path2d = new Path2D(path.d);
 
-        if (layer.element.style.fill && layer.element.style.fill !== 'none') {
-          ctx.fillStyle = layer.element.style.fill;
+        if (fill && fill !== 'none') {
+          ctx.fillStyle = fill;
           ctx.fill(path2d);
         }
 
-        if (layer.element.style.stroke) {
-          ctx.strokeStyle = layer.element.style.stroke;
+        if (stroke) {
+          ctx.strokeStyle = stroke;
           ctx.lineWidth = layer.element.style.strokeWidth || 1;
           ctx.stroke(path2d);
         }
@@ -145,13 +164,13 @@ export function Canvas() {
             ctx.closePath();
           }
 
-          if (layer.element.style.fill && layer.element.type === 'polygon') {
-            ctx.fillStyle = layer.element.style.fill;
+          if (fill && fill !== 'none' && layer.element.type === 'polygon') {
+            ctx.fillStyle = fill;
             ctx.fill();
           }
 
-          if (layer.element.style.stroke) {
-            ctx.strokeStyle = layer.element.style.stroke;
+          if (stroke && stroke !== 'none') {
+            ctx.strokeStyle = stroke;
             ctx.lineWidth = layer.element.style.strokeWidth || 1;
             ctx.stroke();
           }
