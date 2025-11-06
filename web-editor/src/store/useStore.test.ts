@@ -13,6 +13,7 @@ describe('useStore', () => {
         duration: 5,
         currentTime: 0,
         isPlaying: false,
+        layers: [],
       },
     });
   });
@@ -28,6 +29,7 @@ describe('useStore', () => {
         duration: 5,
         currentTime: 0,
         isPlaying: false,
+        layers: [],
       });
     });
   });
@@ -108,6 +110,267 @@ describe('useStore', () => {
       useStore.getState().setIsPlaying(true);
 
       expect(useStore.getState().project).toBeNull();
+    });
+  });
+
+  describe('toggleLayerVisibility', () => {
+    it('should toggle layer visibility from true to false', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: false,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().toggleLayerVisibility('layer1');
+
+      expect(useStore.getState().project?.layers[0].visible).toBe(false);
+    });
+
+    it('should toggle layer visibility from false to true', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: false,
+              locked: false,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().toggleLayerVisibility('layer1');
+
+      expect(useStore.getState().project?.layers[0].visible).toBe(true);
+    });
+
+    it('should handle null project gracefully', () => {
+      useStore.setState({ project: null });
+
+      useStore.getState().toggleLayerVisibility('layer1');
+
+      expect(useStore.getState().project).toBeNull();
+    });
+  });
+
+  describe('toggleLayerLock', () => {
+    it('should toggle layer lock from false to true', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: false,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().toggleLayerLock('layer1');
+
+      expect(useStore.getState().project?.layers[0].locked).toBe(true);
+    });
+
+    it('should toggle layer lock from true to false', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: true,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().toggleLayerLock('layer1');
+
+      expect(useStore.getState().project?.layers[0].locked).toBe(false);
+    });
+
+    it('should handle null project gracefully', () => {
+      useStore.setState({ project: null });
+
+      useStore.getState().toggleLayerLock('layer1');
+
+      expect(useStore.getState().project).toBeNull();
+    });
+  });
+
+  describe('selectLayer', () => {
+    it('should set selected layer id', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: false,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().selectLayer('layer1');
+
+      expect(useStore.getState().project?.selectedLayerId).toBe('layer1');
+    });
+
+    it('should update selected layer when selecting different layer', () => {
+      useStore.setState({
+        project: {
+          name: 'Test',
+          width: 800,
+          height: 600,
+          fps: 30,
+          duration: 3,
+          currentTime: 0,
+          isPlaying: false,
+          selectedLayerId: 'layer1',
+          layers: [
+            {
+              id: 'layer1',
+              name: 'Layer 1',
+              element: {
+                id: 'rect1',
+                type: 'rect',
+                name: 'Rect',
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: false,
+            },
+            {
+              id: 'layer2',
+              name: 'Layer 2',
+              element: {
+                id: 'circle1',
+                type: 'circle',
+                name: 'Circle',
+                cx: 50,
+                cy: 50,
+                r: 25,
+                transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+                style: {},
+              },
+              visible: true,
+              locked: false,
+            },
+          ],
+        },
+      });
+
+      useStore.getState().selectLayer('layer2');
+
+      expect(useStore.getState().project?.selectedLayerId).toBe('layer2');
     });
   });
 });
