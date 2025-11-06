@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Layer } from '../models/Layer';
+import type { Layer } from '../models/Layer';
 
 /**
  * Project state interface

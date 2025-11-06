@@ -1,4 +1,4 @@
-import {
+import type {
   AnyElement,
   CircleElement,
   EllipseElement,
@@ -10,7 +10,7 @@ import {
   Style,
   Transform,
 } from '../models/Element';
-import { Layer } from '../models/Layer';
+import type { Layer } from '../models/Layer';
 
 /**
  * Result of parsing an SVG

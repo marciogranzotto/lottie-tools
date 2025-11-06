@@ -94,15 +94,7 @@ export interface PolylineElement extends Element {
 }
 
 /**
- * Group element (container for other elements)
- */
-export interface GroupElement extends Element {
-  type: 'group';
-  children: Element[];
-}
-
-/**
- * Union type for all element types
+ * Union type for all element types (declared before GroupElement to resolve circular reference)
  */
 export type AnyElement =
   | RectElement
@@ -112,3 +104,11 @@ export type AnyElement =
   | PolygonElement
   | PolylineElement
   | GroupElement;
+
+/**
+ * Group element (container for other elements)
+ */
+export interface GroupElement extends Element {
+  type: 'group';
+  children: AnyElement[];
+}

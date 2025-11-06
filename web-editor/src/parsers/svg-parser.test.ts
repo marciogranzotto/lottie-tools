@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseSVG, SVGParseResult } from './svg-parser';
+import { parseSVG } from './svg-parser';
+import type { SVGParseResult } from './svg-parser';
 
 describe('SVG Parser', () => {
   describe('parseSVG', () => {

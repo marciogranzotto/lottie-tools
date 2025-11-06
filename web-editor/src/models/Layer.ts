@@ -1,4 +1,4 @@
-import { AnyElement } from './Element';
+import type { AnyElement } from './Element';
 
 /**
  * Layer represents a visual element in the animation timeline
