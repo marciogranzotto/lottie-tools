@@ -7,7 +7,7 @@ An open-source web-based animation editor for creating and editing Lottie animat
 
 ## 🎨 Features
 
-### Current Status: 🚧 In Development (Milestone 5 Complete)
+### Current Status: 🚧 In Development (Milestone 6 Complete)
 
 **Lottie Open Studio** is currently under active development.
 
@@ -19,13 +19,14 @@ An open-source web-based animation editor for creating and editing Lottie animat
 - ⚡ **Easing Functions** - Linear, ease-in, ease-out, ease-in-out with visual feedback
 - 🎨 **Color Animation** - Smooth RGB interpolation for fill and stroke colors
 - 📊 **Property Tracks** - Expandable timeline tracks showing keyframes per property
+- 💾 **Lottie Export** - Export animations as standard Lottie JSON format
 - 👁️ **Live Preview** - Real-time canvas preview with smooth interpolated animations
-- 🧪 **Test Coverage** - 275 tests passing with comprehensive TDD approach
+- 🧪 **Test Coverage** - 278 tests passing with comprehensive TDD approach
 
 #### 🚧 In Progress:
-- 💾 **Export to Lottie** - Export animations as Lottie JSON (Milestone 6)
-- 🔄 **Round-trip Editing** - Import existing Lottie files, edit, and re-export
+- 🔄 **Lottie Import** - Import existing Lottie files for editing (Milestone 7)
 - 🎨 **Advanced Features** - Text layers, gradients, masks
+- 📦 **lottie-web Integration** - Preview with official Lottie player
 
 See [PLAN.web-editor.md](PLAN.web-editor.md) for the complete development roadmap.
 
@@ -37,9 +38,9 @@ This repository contains two complementary tools for working with Lottie animati
 A browser-based animation editor for creating and editing Lottie animations.
 
 **Location**: `web-editor/`
-**Status**: 🚧 50% Complete (5/10 milestones to MVP)
+**Status**: 🚧 60% Complete (6/10 milestones to MVP)
 **Technology**: React + TypeScript + Vite + Zustand
-**Current Features**: SVG import, timeline with property tracks, multi-property animation with easing
+**Current Features**: SVG import, multi-property animation, Lottie JSON export
 
 ### 2. **Lottie to GIF Converter** (CLI Tool)
 ✅ Production Ready - Convert Lottie JSON animations to animated GIF files.
@@ -101,13 +102,13 @@ See [lottie-to-gif/README.md](lottie-to-gif/README.md) for full CLI documentatio
 - [x] **Milestone 3**: Timeline UI and playback engine (30 FPS playback)
 - [x] **Milestone 4**: Keyframe creation & basic animation (position interpolation)
 - [x] **Milestone 5**: Multi-property animation (scale, rotation, opacity, colors, easing)
-- [ ] **Milestone 6**: Lottie JSON export
+- [x] **Milestone 6**: Lottie JSON export (TypeScript types, property/shape converters, download)
 - [ ] **Milestone 7**: Lottie JSON import and round-trip editing
 - [ ] **Milestone 8**: Preview integration with lottie-web
 - [ ] **Milestone 9**: Project save/load & state management
 - [ ] **Milestone 10**: UI/UX polish and documentation
 
-**Current Status**: ✅ Milestone 5 Complete - Multi-property animation with easing and property tracks!
+**Current Status**: ✅ Milestone 6 Complete - Lottie JSON export fully functional!
 
 ### Post-MVP Features
 - [ ] Text layer support (v1.1)
