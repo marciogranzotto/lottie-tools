@@ -15,6 +15,7 @@ export function Timeline() {
 
   const [loop, setLoop] = useState(false);
   const [collapsedLayers, setCollapsedLayers] = useState<Set<string>>(new Set());
+  const [contextMenu, setContextMenu] = useState<{ keyframeId: string; x: number; y: number } | null>(null);
   const engineRef = useRef<PlaybackEngine | null>(null);
   const tracksRef = useRef<HTMLDivElement>(null);
 
@@ -228,6 +229,57 @@ export function Timeline() {
     }
   };
 
+  // Helper: Handle keyframe right-click for easing menu
+  const handleKeyframeContextMenu = (e: React.MouseEvent, keyframeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Calculate menu dimensions (approximate)
+    const menuHeight = 220; // Approximate height of the context menu
+    const menuWidth = 160;
+
+    // Get viewport dimensions
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Calculate position
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Check if menu would overflow bottom
+    if (y + menuHeight > viewportHeight) {
+      y = y - menuHeight; // Position above cursor
+    }
+
+    // Check if menu would overflow right
+    if (x + menuWidth > viewportWidth) {
+      x = viewportWidth - menuWidth - 10; // Position from right edge
+    }
+
+    setContextMenu({
+      keyframeId,
+      x,
+      y,
+    });
+  };
+
+  // Helper: Change keyframe easing
+  const handleEasingChange = (easing: string) => {
+    if (contextMenu) {
+      updateKeyframe(contextMenu.keyframeId, { easing });
+      setContextMenu(null);
+    }
+  };
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
+
   // Helper: Get easing color
   const getEasingColor = (easing: string): string => {
     switch (easing) {
@@ -420,7 +472,8 @@ export function Timeline() {
                                 background: getEasingColor(kf.easing),
                               }}
                               onClick={(e) => handleKeyframeClick(e, kf.id)}
-                              title={`Time: ${kf.time.toFixed(2)}s\nEasing: ${kf.easing}\nShift+Click to delete`}
+                              onContextMenu={(e) => handleKeyframeContextMenu(e, kf.id)}
+                              title={`Time: ${kf.time.toFixed(2)}s\nEasing: ${kf.easing}\nShift+Click to delete · Right-click for easing`}
                             />
                           );
                         })}
@@ -437,6 +490,42 @@ export function Timeline() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Easing Context Menu */}
+      {contextMenu && (
+        <div
+          className="timeline-context-menu"
+          style={{
+            position: 'fixed',
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+            zIndex: 1000,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="timeline-context-menu-header">Change Easing</div>
+          <button onClick={() => handleEasingChange('linear')}>
+            <span className="timeline-context-menu-swatch" style={{ background: getEasingColor('linear') }} />
+            Linear
+          </button>
+          <button onClick={() => handleEasingChange('easeIn')}>
+            <span className="timeline-context-menu-swatch" style={{ background: getEasingColor('easeIn') }} />
+            Ease In
+          </button>
+          <button onClick={() => handleEasingChange('easeOut')}>
+            <span className="timeline-context-menu-swatch" style={{ background: getEasingColor('easeOut') }} />
+            Ease Out
+          </button>
+          <button onClick={() => handleEasingChange('easeInOut')}>
+            <span className="timeline-context-menu-swatch" style={{ background: getEasingColor('easeInOut') }} />
+            Ease In-Out
+          </button>
+          <button onClick={() => handleEasingChange('hold')}>
+            <span className="timeline-context-menu-swatch" style={{ background: getEasingColor('hold') }} />
+            Hold
+          </button>
         </div>
       )}
     </div>
