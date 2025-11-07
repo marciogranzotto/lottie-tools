@@ -9,55 +9,64 @@ import type {
   LottieKeyframe,
   LottieRectShape,
   LottieEllipseShape,
+  LottiePathShape,
   LottieGroupShape,
   LottieFillShape,
   LottieStrokeShape,
   LottieTransformShape,
 } from '../models/LottieTypes';
+import { svgPathToLottiePath } from '../utils/svg-to-lottie-path';
 
 export class LottieExporter {
   /**
    * Convert easing string to Lottie bezier tangents
+   * Returns easing handles in Lottie format with x and y arrays
    */
   private static getEasingTangents(easing: string): {
     i: { x: number[]; y: number[] };
     o: { x: number[]; y: number[] };
-  } | null {
+  } {
     // Normalize easing string
     const normalizedEasing = easing.toLowerCase().replace(/-/g, '');
 
     switch (normalizedEasing) {
       case 'linear':
-        // Linear doesn't need tangents (or use [0,0] to [1,1])
-        return null;
+        // Linear: straight interpolation from current to next
+        return {
+          o: { x: [0, 0], y: [0, 0] },
+          i: { x: [1, 1], y: [1, 1] },
+        };
 
       case 'easein':
       case 'esin':
         // Cubic ease-in: starts slow, ends fast
         return {
-          i: { x: [0.42, 0.42], y: [0, 0] },
-          o: { x: [1, 1], y: [1, 1] },
+          o: { x: [0.42, 0.42], y: [0, 0] },
+          i: { x: [1, 1], y: [1, 1] },
         };
 
       case 'easeout':
       case 'esout':
         // Cubic ease-out: starts fast, ends slow
         return {
-          i: { x: [0, 0], y: [0, 0] },
-          o: { x: [0.58, 0.58], y: [1, 1] },
+          o: { x: [0, 0], y: [0, 0] },
+          i: { x: [0.58, 0.58], y: [1, 1] },
         };
 
       case 'easeinout':
       case 'esinout':
         // Cubic ease-in-out: slow start, fast middle, slow end
         return {
-          i: { x: [0.42, 0.42], y: [0, 0] },
-          o: { x: [0.58, 0.58], y: [1, 1] },
+          o: { x: [0.333, 0.333], y: [0, 0] },
+          i: { x: [0.667, 0.667], y: [1, 1] },
         };
 
       default:
         // Unknown easing, default to linear
-        return null;
+        return {
+          o: { x: [0, 0], y: [0, 0] },
+          i: { x: [1, 1], y: [1, 1] },
+        };
     }
   }
 
@@ -124,10 +133,43 @@ export class LottieExporter {
   ): LottieTransform {
     const transform = layer.element.transform;
     const style = layer.element.style;
+    const element = layer.element;
+
+    // Calculate center point for anchor
+    let centerX = 0;
+    let centerY = 0;
+
+    if (element.type === 'rect') {
+      centerX = element.x + element.width / 2;
+      centerY = element.y + element.height / 2;
+    } else if (element.type === 'circle') {
+      centerX = element.cx;
+      centerY = element.cy;
+    } else if (element.type === 'ellipse') {
+      centerX = element.cx;
+      centerY = element.cy;
+    } else if (element.type === 'path') {
+      // For paths, calculate bounding box center
+      const pathData = svgPathToLottiePath(element.d);
+      if (pathData.v.length > 0) {
+        const xs = pathData.v.map(v => v[0]);
+        const ys = pathData.v.map(v => v[1]);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        centerX = (minX + maxX) / 2;
+        centerY = (minY + maxY) / 2;
+      }
+    }
+
+    // Position = transform + center offset
+    const posX = transform.x + centerX;
+    const posY = transform.y + centerY;
 
     return {
-      p: this.convertPositionProperty(transform.x, transform.y, keyframes, 'x', 'y', fps),
-      a: { a: 0, k: [0, 0] },  // Anchor point (not animated for now)
+      p: this.convertPositionProperty(posX, posY, keyframes, 'x', 'y', fps),
+      a: { a: 0, k: [centerX, centerY] },  // Anchor at shape center
       s: this.convertScaleProperty(transform.scaleX, transform.scaleY, keyframes, fps),
       r: this.convertRotationProperty(transform.rotation, keyframes, fps),
       o: this.convertOpacityProperty(style.opacity ?? 1, keyframes, fps),
@@ -187,11 +229,9 @@ export class LottieExporter {
         keyframe.e = [nextX, nextY];
       }
 
-      // Add easing tangents if not linear
-      if (tangents) {
-        keyframe.i = tangents.i;
-        keyframe.o = tangents.o;
-      }
+      // Add easing tangents (always present now)
+      keyframe.i = tangents.i;
+      keyframe.o = tangents.o;
 
       return keyframe;
     });
@@ -249,10 +289,9 @@ export class LottieExporter {
         keyframe.e = [nextX * 100, nextY * 100];
       }
 
-      if (tangents) {
-        keyframe.i = tangents.i;
-        keyframe.o = tangents.o;
-      }
+      // Add easing tangents (always present now)
+      keyframe.i = tangents.i;
+      keyframe.o = tangents.o;
 
       return keyframe;
     });
@@ -291,10 +330,9 @@ export class LottieExporter {
         keyframe.e = [nextValue];
       }
 
-      if (tangents) {
-        keyframe.i = tangents.i;
-        keyframe.o = tangents.o;
-      }
+      // Add easing tangents (always present now)
+      keyframe.i = tangents.i;
+      keyframe.o = tangents.o;
 
       return keyframe;
     });
@@ -333,10 +371,92 @@ export class LottieExporter {
         keyframe.e = [nextValue];
       }
 
-      if (tangents) {
-        keyframe.i = tangents.i;
+      // Add easing tangents (always present now)
+      keyframe.i = tangents.i;
+      keyframe.o = tangents.o;
+
+      return keyframe;
+    });
+
+    return { a: 1, k: lottieKeyframes };
+  }
+
+  /**
+   * Convert color property (hex to normalized RGB array with animation)
+   * Per Lottie spec: all keyframes except the last need i/o tangents
+   */
+  private static convertColorProperty(
+    defaultColor: string,
+    keyframes: Keyframe[],
+    propertyName: string,
+    fps: number
+  ): LottieAnimatedProperty {
+    const colorKfs = keyframes.filter(kf => kf.property === propertyName);
+
+    if (colorKfs.length === 0) {
+      // Not animated - Lottie uses 3-value RGB array [r, g, b], not RGBA
+      const rgb = this.hexToRgb(defaultColor);
+      return { a: 0, k: [rgb.r / 255, rgb.g / 255, rgb.b / 255] };
+    }
+
+    // Animated - all keyframes except last need easing handles
+    const lottieKeyframes: any[] = colorKfs.map((kf, index) => {
+      const colorValue = typeof kf.value === 'string' ? kf.value : defaultColor;
+      const rgb = this.hexToRgb(colorValue);
+
+      const keyframe: any = {
+        t: Math.round(kf.time * fps),
+        s: [rgb.r / 255, rgb.g / 255, rgb.b / 255],
+      };
+
+      // Add easing handles to all keyframes except the last
+      if (index < colorKfs.length - 1) {
+        const tangents = this.getEasingTangents(kf.easing || 'linear');
         keyframe.o = tangents.o;
+        keyframe.i = tangents.i;
       }
+
+      return keyframe;
+    });
+
+    return { a: 1, k: lottieKeyframes };
+  }
+
+  /**
+   * Convert numeric property with animation support
+   */
+  private static convertNumericProperty(
+    defaultValue: number,
+    keyframes: Keyframe[],
+    propertyName: string,
+    fps: number
+  ): LottieAnimatedProperty {
+    const numericKfs = keyframes.filter(kf => kf.property === propertyName);
+
+    if (numericKfs.length === 0) {
+      return { a: 0, k: defaultValue };
+    }
+
+    const lottieKeyframes: LottieKeyframe[] = numericKfs.map((kf, index) => {
+      const value = typeof kf.value === 'number' ? kf.value : defaultValue;
+      const tangents = this.getEasingTangents(kf.easing || 'linear');
+
+      const keyframe: LottieKeyframe = {
+        t: Math.round(kf.time * fps),
+        s: [value],
+      };
+
+      // Add end value
+      if (index < numericKfs.length - 1) {
+        const nextValue = typeof numericKfs[index + 1].value === 'number'
+          ? numericKfs[index + 1].value
+          : value;
+        keyframe.e = [nextValue];
+      }
+
+      // Add easing tangents (always present now)
+      keyframe.i = tangents.i;
+      keyframe.o = tangents.o;
 
       return keyframe;
     });
@@ -351,7 +471,7 @@ export class LottieExporter {
     layer: Layer,
     keyframes: Keyframe[],
     fps: number
-  ): (LottieRectShape | LottieEllipseShape | LottieGroupShape | LottieFillShape | LottieStrokeShape)[] {
+  ): (LottieRectShape | LottieEllipseShape | LottiePathShape | LottieGroupShape | LottieFillShape | LottieStrokeShape)[] {
     const element = layer.element;
     const shapes: any[] = [];
 
@@ -359,11 +479,13 @@ export class LottieExporter {
     const groupItems: any[] = [];
 
     // Add shape geometry
+    // Shapes are positioned relative to the group transform anchor
+    // Since layer anchor is at shape center, shapes are centered at origin
     if (element.type === 'rect') {
       const rectShape: LottieRectShape = {
         ty: 'rc',
         nm: 'Rectangle',
-        p: { a: 0, k: [element.x + element.width / 2, element.y + element.height / 2] },
+        p: { a: 0, k: [0, 0] },  // Centered at origin (anchor handles positioning)
         s: { a: 0, k: [element.width, element.height] },
         r: { a: 0, k: 0 },  // Roundness
       };
@@ -372,7 +494,7 @@ export class LottieExporter {
       const ellipseShape: LottieEllipseShape = {
         ty: 'el',
         nm: 'Ellipse',
-        p: { a: 0, k: [element.cx, element.cy] },
+        p: { a: 0, k: [0, 0] },  // Centered at origin
         s: { a: 0, k: [element.rx * 2, element.ry * 2] },
       };
       groupItems.push(ellipseShape);
@@ -380,19 +502,31 @@ export class LottieExporter {
       const ellipseShape: LottieEllipseShape = {
         ty: 'el',
         nm: 'Circle',
-        p: { a: 0, k: [element.cx, element.cy] },
+        p: { a: 0, k: [0, 0] },  // Centered at origin
         s: { a: 0, k: [element.r * 2, element.r * 2] },
       };
       groupItems.push(ellipseShape);
+    } else if (element.type === 'path') {
+      // Convert SVG path data to Lottie bezier format
+      const pathData = svgPathToLottiePath(element.d);
+
+      const pathShape: LottiePathShape = {
+        ty: 'sh',
+        nm: 'Path',
+        ks: {
+          a: 0,
+          k: pathData
+        }
+      };
+      groupItems.push(pathShape);
     }
 
     // Add fill
     if (element.style.fill && element.style.fill !== 'none') {
-      const fillColor = this.hexToRgb(element.style.fill);
       const fillShape: LottieFillShape = {
         ty: 'fl',
         nm: 'Fill',
-        c: { a: 0, k: [fillColor.r / 255, fillColor.g / 255, fillColor.b / 255, 1] },
+        c: this.convertColorProperty(element.style.fill, keyframes, 'fill', fps),
         o: { a: 0, k: 100 },
       };
       groupItems.push(fillShape);
@@ -400,13 +534,12 @@ export class LottieExporter {
 
     // Add stroke
     if (element.style.stroke && element.style.stroke !== 'none') {
-      const strokeColor = this.hexToRgb(element.style.stroke);
       const strokeShape: LottieStrokeShape = {
         ty: 'st',
         nm: 'Stroke',
-        c: { a: 0, k: [strokeColor.r / 255, strokeColor.g / 255, strokeColor.b / 255, 1] },
+        c: this.convertColorProperty(element.style.stroke, keyframes, 'stroke', fps),
         o: { a: 0, k: 100 },
-        w: { a: 0, k: element.style.strokeWidth || 1 },
+        w: this.convertNumericProperty(element.style.strokeWidth || 1, keyframes, 'strokeWidth', fps),
         lc: 2,  // Round cap
         lj: 2,  // Round join
       };
@@ -439,17 +572,50 @@ export class LottieExporter {
   }
 
   /**
-   * Convert hex color to RGB
+   * Convert color string (hex, rgb, rgba, or named) to RGB
    */
-  private static hexToRgb(hex: string): { r: number; g: number; b: number } {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
+  private static hexToRgb(colorString: string): { r: number; g: number; b: number } {
+    // Handle hex format: #RRGGBB or RRGGBB
+    const hexResult = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colorString);
+    if (hexResult) {
+      return {
+        r: parseInt(hexResult[1], 16),
+        g: parseInt(hexResult[2], 16),
+        b: parseInt(hexResult[3], 16),
+      };
+    }
+
+    // Handle rgb() or rgba() format
+    const rgbResult = /rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(colorString);
+    if (rgbResult) {
+      return {
+        r: parseInt(rgbResult[1]),
+        g: parseInt(rgbResult[2]),
+        b: parseInt(rgbResult[3]),
+      };
+    }
+
+    // Handle named colors by using a temporary canvas
+    if (typeof document !== 'undefined') {
+      const ctx = document.createElement('canvas').getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = colorString;
+        const computed = ctx.fillStyle;
+        // fillStyle will be in hex format after setting
+        const computedHex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(computed);
+        if (computedHex) {
+          return {
+            r: parseInt(computedHex[1], 16),
+            g: parseInt(computedHex[2], 16),
+            b: parseInt(computedHex[3], 16),
+          };
         }
-      : { r: 0, g: 0, b: 0 };
+      }
+    }
+
+    // Fallback to black if nothing matches
+    console.warn(`Could not parse color: ${colorString}`);
+    return { r: 0, g: 0, b: 0 };
   }
 
   /**
