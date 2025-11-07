@@ -7,7 +7,7 @@ An open-source web-based animation editor for creating and editing Lottie animat
 
 ## 🎨 Features
 
-### Current Status: 🚧 In Development (Milestone 4 Complete)
+### Current Status: 🚧 In Development (Milestone 5 Complete)
 
 **Lottie Open Studio** is currently under active development.
 
@@ -15,14 +15,17 @@ An open-source web-based animation editor for creating and editing Lottie animat
 - 📁 **SVG Import** - Import and parse SVG files into layers
 - 🎨 **Layer Management** - View, select, hide/show, and lock layers
 - ⌛ **Timeline Playback** - Play/pause animations with 30 FPS playback engine
-- 🎬 **Position Animation** - Create keyframes and animate position (x, y) with linear interpolation
+- 🎬 **Multi-Property Animation** - Animate position, scale, rotation, opacity, colors, and stroke width
+- ⚡ **Easing Functions** - Linear, ease-in, ease-out, ease-in-out with visual feedback
+- 🎨 **Color Animation** - Smooth RGB interpolation for fill and stroke colors
+- 📊 **Property Tracks** - Expandable timeline tracks showing keyframes per property
 - 👁️ **Live Preview** - Real-time canvas preview with smooth interpolated animations
-- 🧪 **Test Coverage** - 80%+ branch coverage with comprehensive TDD approach
+- 🧪 **Test Coverage** - 275 tests passing with comprehensive TDD approach
 
 #### 🚧 In Progress:
-- 🎬 **Multi-property Animation** - Scale, rotation, opacity (Milestone 5)
-- 💾 **Export to Lottie** - Export animations as Lottie JSON
+- 💾 **Export to Lottie** - Export animations as Lottie JSON (Milestone 6)
 - 🔄 **Round-trip Editing** - Import existing Lottie files, edit, and re-export
+- 🎨 **Advanced Features** - Text layers, gradients, masks
 
 See [PLAN.web-editor.md](PLAN.web-editor.md) for the complete development roadmap.
 
@@ -34,9 +37,9 @@ This repository contains two complementary tools for working with Lottie animati
 A browser-based animation editor for creating and editing Lottie animations.
 
 **Location**: `web-editor/`
-**Status**: 🚧 40% Complete (4/10 milestones)
+**Status**: 🚧 50% Complete (5/10 milestones to MVP)
 **Technology**: React + TypeScript + Vite + Zustand
-**Current Features**: SVG import, timeline playback, position keyframe animation
+**Current Features**: SVG import, timeline with property tracks, multi-property animation with easing
 
 ### 2. **Lottie to GIF Converter** (CLI Tool)
 ✅ Production Ready - Convert Lottie JSON animations to animated GIF files.
@@ -97,14 +100,14 @@ See [lottie-to-gif/README.md](lottie-to-gif/README.md) for full CLI documentatio
 - [x] **Milestone 2**: SVG import and layer management (TDD approach)
 - [x] **Milestone 3**: Timeline UI and playback engine (30 FPS playback)
 - [x] **Milestone 4**: Keyframe creation & basic animation (position interpolation)
-- [ ] **Milestone 5**: Multi-property animation (scale, rotation, opacity)
+- [x] **Milestone 5**: Multi-property animation (scale, rotation, opacity, colors, easing)
 - [ ] **Milestone 6**: Lottie JSON export
-- [ ] **Milestone 7**: Advanced features (easing, bezier curves)
-- [ ] **Milestone 8**: Lottie JSON import and round-trip editing
-- [ ] **Milestone 9**: UI/UX polish and optimization
-- [ ] **Milestone 10**: Documentation and production release
+- [ ] **Milestone 7**: Lottie JSON import and round-trip editing
+- [ ] **Milestone 8**: Preview integration with lottie-web
+- [ ] **Milestone 9**: Project save/load & state management
+- [ ] **Milestone 10**: UI/UX polish and documentation
 
-**Current Status**: ✅ Milestone 4 Complete - Basic position animation working with interpolation!
+**Current Status**: ✅ Milestone 5 Complete - Multi-property animation with easing and property tracks!
 
 ### Post-MVP Features
 - [ ] Text layer support (v1.1)

@@ -34,6 +34,7 @@ export function Canvas() {
       const scaleXKeyframes = getKeyframesForLayer(layer.id, 'scaleX');
       const scaleYKeyframes = getKeyframesForLayer(layer.id, 'scaleY');
       const opacityKeyframes = getKeyframesForLayer(layer.id, 'opacity');
+      const strokeWidthKeyframes = getKeyframesForLayer(layer.id, 'strokeWidth');
 
       const x =
         xKeyframes.length > 0
@@ -79,6 +80,11 @@ export function Canvas() {
           ? getColorAtTime(strokeKeyframes, project.currentTime)
           : layer.element.style.stroke;
 
+      const strokeWidth =
+        strokeWidthKeyframes.length > 0
+          ? getValueAtTime(strokeWidthKeyframes, project.currentTime)
+          : (layer.element.style.strokeWidth ?? 1);
+
       // Draw based on element type
       ctx.save();
       ctx.translate(x, y);
@@ -101,7 +107,7 @@ export function Canvas() {
         // Only stroke if there's a valid stroke color (not 'none')
         if (stroke && stroke !== 'none') {
           ctx.strokeStyle = stroke;
-          ctx.lineWidth = layer.element.style.strokeWidth || 1;
+          ctx.lineWidth = strokeWidth;
           ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
         }
       } else if (layer.element.type === 'circle') {
@@ -116,7 +122,7 @@ export function Canvas() {
 
         if (stroke && stroke !== 'none') {
           ctx.strokeStyle = stroke;
-          ctx.lineWidth = layer.element.style.strokeWidth || 1;
+          ctx.lineWidth = strokeWidth;
           ctx.stroke();
         }
       } else if (layer.element.type === 'ellipse') {
@@ -131,7 +137,7 @@ export function Canvas() {
 
         if (stroke && stroke !== 'none') {
           ctx.strokeStyle = stroke;
-          ctx.lineWidth = layer.element.style.strokeWidth || 1;
+          ctx.lineWidth = strokeWidth;
           ctx.stroke();
         }
       } else if (layer.element.type === 'path') {
@@ -145,7 +151,7 @@ export function Canvas() {
 
         if (stroke) {
           ctx.strokeStyle = stroke;
-          ctx.lineWidth = layer.element.style.strokeWidth || 1;
+          ctx.lineWidth = strokeWidth;
           ctx.stroke(path2d);
         }
       } else if (layer.element.type === 'polygon' || layer.element.type === 'polyline') {
@@ -171,7 +177,7 @@ export function Canvas() {
 
           if (stroke && stroke !== 'none') {
             ctx.strokeStyle = stroke;
-            ctx.lineWidth = layer.element.style.strokeWidth || 1;
+            ctx.lineWidth = strokeWidth;
             ctx.stroke();
           }
         }

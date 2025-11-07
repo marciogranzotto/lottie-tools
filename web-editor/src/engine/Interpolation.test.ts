@@ -12,6 +12,7 @@ import {
   easeOut,
   easeInOut,
   applyEasing,
+  interpolateAngle,
 } from './Interpolation';
 import type { Keyframe } from '../models/Keyframe';
 
@@ -504,6 +505,72 @@ describe('Interpolation Engine', () => {
 
         // Should default to black for invalid value
         expect(getColorAtTime(keyframes, 0)).toBe('#000000');
+      });
+    });
+  });
+
+  describe('Angle Interpolation', () => {
+    describe('interpolateAngle', () => {
+      it('should interpolate normally when angles are close', () => {
+        // 0 to 90 degrees
+        expect(interpolateAngle(0, 90, 0)).toBe(0);
+        expect(interpolateAngle(0, 90, 0.5)).toBe(45);
+        expect(interpolateAngle(0, 90, 1)).toBe(90);
+      });
+
+      it('should take shortest path from 350° to 10° (going forward through 0°)', () => {
+        // Should interpolate through 360°/0° (20° total), not backwards (340°)
+        expect(interpolateAngle(350, 10, 0)).toBe(350);
+        expect(interpolateAngle(350, 10, 0.5)).toBe(0);
+        expect(interpolateAngle(350, 10, 1)).toBe(10);
+      });
+
+      it('should take shortest path from 10° to 350° (going backward through 0°)', () => {
+        // Should interpolate through 360°/0° (-20° total), not forward (340°)
+        expect(interpolateAngle(10, 350, 0)).toBe(10);
+        expect(interpolateAngle(10, 350, 0.5)).toBe(0);
+        expect(interpolateAngle(10, 350, 1)).toBe(350);
+      });
+
+      it('should handle 180° transitions correctly (can go either way)', () => {
+        // At exactly 180°, both paths are equal. Implementation should be consistent.
+        const result = interpolateAngle(0, 180, 0.5);
+        expect(result).toBe(90); // Should take positive direction
+      });
+
+      it('should handle 180° difference (both paths equal)', () => {
+        // When difference is exactly 180°, both paths are equal distance
+        // Implementation goes backward: 270° - 180° = 90°
+        expect(interpolateAngle(270, 90, 0)).toBe(270);
+        expect(interpolateAngle(270, 90, 0.5)).toBe(180); // Midpoint
+        expect(interpolateAngle(270, 90, 1)).toBe(90);
+      });
+
+      it('should handle angles greater than 360°', () => {
+        // 370° should be treated as 10°
+        expect(interpolateAngle(370, 20, 0.5)).toBe(15);
+      });
+
+      it('should handle negative angles', () => {
+        // -10° should be treated as 350°
+        expect(interpolateAngle(-10, 10, 0.5)).toBe(0);
+      });
+
+      it('should clamp t to 0-1 range', () => {
+        expect(interpolateAngle(0, 90, -0.5)).toBe(0);
+        expect(interpolateAngle(0, 90, 1.5)).toBe(90);
+      });
+
+      it('should handle same start and end angle', () => {
+        expect(interpolateAngle(45, 45, 0.5)).toBe(45);
+        expect(interpolateAngle(180, 180, 0.3)).toBe(180);
+      });
+
+      it('should normalize result to 0-360 range', () => {
+        // Result should always be in 0-360 range
+        const result1 = interpolateAngle(350, 370, 0.5); // 370 = 10°
+        expect(result1).toBeGreaterThanOrEqual(0);
+        expect(result1).toBeLessThan(360);
       });
     });
   });

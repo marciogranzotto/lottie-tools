@@ -131,6 +131,43 @@ export function interpolateColor(color1: string, color2: string, t: number): str
 }
 
 /**
+ * Interpolate between two angles using the shortest path
+ * @param start - Starting angle in degrees
+ * @param end - Ending angle in degrees
+ * @param t - Interpolation factor (0-1)
+ * @returns Interpolated angle in degrees (0-360)
+ */
+export function interpolateAngle(start: number, end: number, t: number): number {
+  // Clamp t to 0-1 range
+  const clampedT = Math.max(0, Math.min(1, t));
+
+  // Normalize angles to 0-360 range
+  const normalizeAngle = (angle: number) => {
+    const normalized = angle % 360;
+    return normalized < 0 ? normalized + 360 : normalized;
+  };
+
+  const startNorm = normalizeAngle(start);
+  const endNorm = normalizeAngle(end);
+
+  // Calculate the shortest path difference
+  let diff = endNorm - startNorm;
+
+  // Adjust difference to take shortest path
+  if (diff > 180) {
+    diff -= 360;
+  } else if (diff < -180) {
+    diff += 360;
+  }
+
+  // Interpolate using the adjusted difference
+  const result = startNorm + diff * clampedT;
+
+  // Normalize result to 0-360 range
+  return normalizeAngle(result);
+}
+
+/**
  * Find the keyframes before and after a given time
  * @param keyframes - Array of keyframes (must be sorted by time)
  * @param time - Time to find bounds for
