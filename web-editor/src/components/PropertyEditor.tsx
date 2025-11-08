@@ -27,6 +27,53 @@ export function PropertyEditor() {
     i: { x: [0.58], y: [1] },
   });
 
+  // Helper: Convert preset easing to bezier tangents
+  const easingToBezier = (easing: string): BezierTangents => {
+    switch (easing) {
+      case 'linear':
+        return {
+          o: { x: [0], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      case 'easeIn':
+      case 'ease-in':
+        return {
+          o: { x: [0.42], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      case 'easeOut':
+      case 'ease-out':
+        return {
+          o: { x: [0], y: [0] },
+          i: { x: [0.58], y: [1] },
+        };
+      case 'easeInOut':
+      case 'ease-in-out':
+        return {
+          o: { x: [0.333], y: [0] },
+          i: { x: [0.667], y: [1] },
+        };
+      case 'hold':
+        return {
+          o: { x: [1], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      default:
+        return {
+          o: { x: [0.42], y: [0] },
+          i: { x: [0.58], y: [1] },
+        };
+    }
+  };
+
+  // Update custom bezier when switching to custom from a preset
+  useEffect(() => {
+    if (selectedEasing !== 'custom') {
+      // Update the bezier preview to match the selected preset
+      setCustomBezier(easingToBezier(selectedEasing));
+    }
+  }, [selectedEasing]);
+
   const selectedLayer = project?.layers.find(
     (layer) => layer.id === project.selectedLayerId
   );

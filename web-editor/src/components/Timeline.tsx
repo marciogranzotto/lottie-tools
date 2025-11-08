@@ -281,6 +281,48 @@ export function Timeline() {
     }
   };
 
+  // Helper: Convert preset easing to bezier tangents
+  const easingToBezier = (easing: string): BezierTangents => {
+    switch (easing) {
+      case 'linear':
+        return {
+          o: { x: [0], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      case 'easeIn':
+      case 'ease-in':
+        return {
+          o: { x: [0.42], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      case 'easeOut':
+      case 'ease-out':
+        return {
+          o: { x: [0], y: [0] },
+          i: { x: [0.58], y: [1] },
+        };
+      case 'easeInOut':
+      case 'ease-in-out':
+        return {
+          o: { x: [0.333], y: [0] },
+          i: { x: [0.667], y: [1] },
+        };
+      case 'hold':
+        // Hold keyframe: step function approximation
+        // Stays at start value until the very end, then jumps
+        return {
+          o: { x: [1], y: [0] },
+          i: { x: [1], y: [1] },
+        };
+      default:
+        // Default to ease-in-out
+        return {
+          o: { x: [0.42], y: [0] },
+          i: { x: [0.58], y: [1] },
+        };
+    }
+  };
+
   // Helper: Open custom bezier editor
   const handleCustomEasing = () => {
     if (!contextMenu || !project) return;
@@ -289,11 +331,15 @@ export function Timeline() {
     const keyframe = project.keyframes.find(kf => kf.id === contextMenu.keyframeId);
     if (!keyframe) return;
 
-    // Get existing bezier or use default
-    const bezier: BezierTangents = (keyframe as any).easingBezier || {
-      o: { x: [0.42], y: [0] },
-      i: { x: [0.58], y: [1] },
-    };
+    // Get existing bezier or convert from preset easing
+    let bezier: BezierTangents;
+    if ((keyframe as any).easingBezier) {
+      // Use existing custom bezier
+      bezier = (keyframe as any).easingBezier;
+    } else {
+      // Convert preset easing to bezier
+      bezier = easingToBezier(keyframe.easing);
+    }
 
     setBezierDialog({
       keyframeId: contextMenu.keyframeId,
