@@ -7,7 +7,7 @@ An open-source web-based animation editor for creating and editing Lottie animat
 
 ## 🎨 Features
 
-### Current Status: 🚧 In Development (Milestone 6 Complete)
+### Current Status: 🚧 In Development (Milestone 7 Complete)
 
 **Lottie Open Studio** is currently under active development.
 
@@ -39,9 +39,9 @@ This repository contains two complementary tools for working with Lottie animati
 A browser-based animation editor for creating and editing Lottie animations.
 
 **Location**: `web-editor/`
-**Status**: 🚧 60% Complete (6/10 milestones to MVP)
+**Status**: 🚧 70% Complete (7/10 milestones to MVP)
 **Technology**: React + TypeScript + Vite + Zustand
-**Current Features**: SVG import, multi-property animation, Lottie JSON export
+**Current Features**: SVG import, multi-property animation, Lottie JSON import/export, custom bezier curves
 
 ### 2. **Lottie to GIF Converter** (CLI Tool)
 ✅ Production Ready - Convert Lottie JSON animations to animated GIF files.
