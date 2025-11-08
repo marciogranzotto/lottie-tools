@@ -8,14 +8,9 @@ describe('Toolbar', () => {
     expect(screen.getByText('Lottie Open Studio')).toBeInTheDocument();
   });
 
-  it('should render Import SVG button', () => {
+  it('should render Import button', () => {
     render(<Toolbar />);
-    expect(screen.getByText('Import SVG')).toBeInTheDocument();
-  });
-
-  it('should render Import Lottie button', () => {
-    render(<Toolbar />);
-    expect(screen.getByText('Import Lottie')).toBeInTheDocument();
+    expect(screen.getByText('Import')).toBeInTheDocument();
   });
 
   it('should render Export button', () => {
