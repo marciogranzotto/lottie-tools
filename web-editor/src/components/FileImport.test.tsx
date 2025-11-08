@@ -12,18 +12,18 @@ describe('FileImport', () => {
   });
 
   describe('Rendering', () => {
-    it('should render file input for SVG', () => {
+    it('should render file input for SVG and Lottie JSON', () => {
       const { container } = render(<FileImport />);
 
       const fileInput = container.querySelector('input[type="file"]');
       expect(fileInput).toBeInTheDocument();
-      expect(fileInput).toHaveAttribute('accept', '.svg,image/svg+xml');
+      expect(fileInput).toHaveAttribute('accept', '.svg,.json,image/svg+xml,application/json');
     });
 
     it('should render import button', () => {
       render(<FileImport />);
 
-      const button = screen.getByRole('button', { name: /import svg/i });
+      const button = screen.getByRole('button', { name: /import/i });
       expect(button).toBeInTheDocument();
     });
 
@@ -248,16 +248,14 @@ describe('FileImport', () => {
       window.FileReader = originalFileReader;
     });
 
-    it('should not import non-SVG files', async () => {
+    it('should accept both SVG and JSON files', async () => {
       const user = userEvent.setup();
       const { container } = render(<FileImport />);
 
-      const file = new File(['not an svg'], 'test.txt', { type: 'text/plain' });
-
       const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
 
-      // File input should reject non-SVG files based on accept attribute
-      expect(fileInput.accept).toBe('.svg,image/svg+xml');
+      // File input should accept both SVG and Lottie JSON files
+      expect(fileInput.accept).toBe('.svg,.json,image/svg+xml,application/json');
     });
   });
 
@@ -288,7 +286,7 @@ describe('FileImport', () => {
       const file = new File([svgContent], 'test.svg', { type: 'image/svg+xml' });
 
       const fileInput = container.querySelector('input[type="file"]')!;
-      const button = screen.getByRole('button', { name: /import svg/i });
+      const button = screen.getByRole('button', { name: /import/i });
 
       // Start upload
       user.upload(fileInput, file);
@@ -311,7 +309,7 @@ describe('FileImport', () => {
       const { container } = render(<FileImport />);
 
       const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-      const button = screen.getByRole('button', { name: /import svg/i });
+      const button = screen.getByRole('button', { name: /import/i });
 
       // Mock click on file input
       const clickSpy = vi.spyOn(fileInput, 'click');

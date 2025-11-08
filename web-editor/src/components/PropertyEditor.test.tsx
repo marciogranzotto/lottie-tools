@@ -388,33 +388,37 @@ describe('PropertyEditor', () => {
   describe('Color Properties', () => {
     it('should display fill color picker', () => {
       render(<PropertyEditor />);
-      const fillInput = screen.getByDisplayValue('#ff0000');
-      expect(fillInput).toBeInTheDocument();
-      expect(fillInput).toHaveAttribute('type', 'color');
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      expect(fillPicker).toBeInTheDocument();
+      expect(screen.getByText('#ff0000')).toBeInTheDocument();
     });
 
     it('should display stroke color picker', () => {
       render(<PropertyEditor />);
-      // mockLayer has no stroke set, so it defaults to 'none', which displays as #000000
-      const colorInputs = screen.getAllByDisplayValue('#000000');
-      const strokeInput = colorInputs.find(input => input.id === 'stroke');
-      expect(strokeInput).toBeInTheDocument();
-      expect(strokeInput).toHaveAttribute('type', 'color');
+      const strokePicker = screen.getByRole('button', { name: /stroke color picker/i });
+      expect(strokePicker).toBeInTheDocument();
+      // mockLayer has no stroke set, so it defaults to 'none'
+      expect(screen.getByText('none')).toBeInTheDocument();
     });
 
     it('should show current fill color', () => {
       render(<PropertyEditor />);
-      const fillInput = screen.getByDisplayValue('#ff0000') as HTMLInputElement;
-      expect(fillInput.value).toBe('#ff0000');
-      expect(fillInput).toHaveAttribute('id', 'fill');
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      expect(fillPicker).toBeInTheDocument();
+      expect(screen.getByText('#ff0000')).toBeInTheDocument();
     });
 
     it('should update fill color when changed', async () => {
+      const user = userEvent.setup();
       render(<PropertyEditor />);
 
-      const fillInput = screen.getByDisplayValue('#ff0000') as HTMLInputElement;
-      // Color inputs don't support clear/type, we use fireEvent.change
-      fireEvent.change(fillInput, { target: { value: '#00ff00' } });
+      // Click to open the color picker dropdown
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      await user.click(fillPicker);
+
+      // Find the color input inside the dropdown
+      const colorInput = screen.getByDisplayValue('#ff0000') as HTMLInputElement;
+      fireEvent.change(colorInput, { target: { value: '#00ff00' } });
 
       const state = useStore.getState();
       const layer = state.project?.layers.find(l => l.id === 'layer-1');
@@ -434,7 +438,7 @@ describe('PropertyEditor', () => {
       expect(fillKeyframes?.[0].value).toBe('#ff0000');
     });
 
-    it('should handle fill="none" with disabled input', () => {
+    it('should handle fill="none" with color picker', () => {
       const layerWithNoFill = {
         ...mockLayer,
         element: {
@@ -462,15 +466,13 @@ describe('PropertyEditor', () => {
       });
 
       render(<PropertyEditor />);
-      // When fill is 'none', the input shows #000000 but is disabled
-      const colorInputs = screen.getAllByDisplayValue('#000000');
-      const fillInput = colorInputs.find(input => input.id === 'fill') as HTMLInputElement;
-      expect(fillInput).toBeDisabled();
-      expect(fillInput).toHaveAttribute('id', 'fill');
-      expect(screen.getAllByText('Enable').length).toBeGreaterThanOrEqual(1);
+      // When fill is 'none', the color picker shows 'none'
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      expect(fillPicker).toBeInTheDocument();
+      expect(fillPicker).toHaveTextContent('none');
     });
 
-    it('should enable fill when "Enable" button clicked', async () => {
+    it('should enable fill when changing color from dropdown', async () => {
       const user = userEvent.setup();
       const layerWithNoFill = {
         ...mockLayer,
@@ -499,15 +501,20 @@ describe('PropertyEditor', () => {
       });
 
       render(<PropertyEditor />);
-      const enableButtons = screen.getAllByText('Enable');
-      await user.click(enableButtons[0]); // Click first Enable button (for fill)
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      await user.click(fillPicker);
+
+      // Change color in the dropdown
+      const colorInput = screen.getByDisplayValue('#000000') as HTMLInputElement;
+      fireEvent.change(colorInput, { target: { value: '#ff0000' } });
 
       const state = useStore.getState();
       const layer = state.project?.layers.find(l => l.id === 'layer-1');
-      expect(layer?.element.style.fill).toBe('#000000');
+      expect(layer?.element.style.fill).toBe('#ff0000');
     });
 
-    it('should animate fill color with interpolation', () => {
+    it('should animate fill color with interpolation', async () => {
+      const user = userEvent.setup();
       useStore.setState({
         project: {
           name: 'Test',
@@ -542,12 +549,16 @@ describe('PropertyEditor', () => {
 
       render(<PropertyEditor />);
       // At time=1, halfway between red (#ff0000) and blue (#0000ff), should be purple (#800080)
-      const fillInput = screen.getByDisplayValue('#800080') as HTMLInputElement;
-      expect(fillInput.value).toBe('#800080');
-      expect(fillInput).toHaveAttribute('id', 'fill');
+      // Open the color picker to access the color input
+      const fillPicker = screen.getByRole('button', { name: /fill color picker/i });
+      await user.click(fillPicker);
+
+      const colorInput = screen.getByDisplayValue('#800080') as HTMLInputElement;
+      expect(colorInput.value).toBe('#800080');
     });
 
-    it('should update stroke color when changed', () => {
+    it('should update stroke color when changed', async () => {
+      const user = userEvent.setup();
       // Update mockLayer to have a stroke color
       const layerWithStroke = {
         ...mockLayer,
@@ -577,16 +588,20 @@ describe('PropertyEditor', () => {
 
       render(<PropertyEditor />);
 
-      const colorInputs = screen.getAllByDisplayValue('#0000ff');
-      const strokeInput = colorInputs.find(input => input.id === 'stroke') as HTMLInputElement;
-      fireEvent.change(strokeInput, { target: { value: '#ff00ff' } });
+      // Open the stroke color picker
+      const strokePicker = screen.getByRole('button', { name: /stroke color picker/i });
+      await user.click(strokePicker);
+
+      // Find the color input in the dropdown
+      const colorInput = screen.getByDisplayValue('#0000ff') as HTMLInputElement;
+      fireEvent.change(colorInput, { target: { value: '#ff00ff' } });
 
       const state = useStore.getState();
       const layer = state.project?.layers.find(l => l.id === 'layer-1');
       expect(layer?.element.style.stroke).toBe('#ff00ff');
     });
 
-    it('should enable stroke when "Enable" button clicked', async () => {
+    it('should enable stroke when changing color from dropdown', async () => {
       const user = userEvent.setup();
       const layerWithNoStroke = {
         ...mockLayer,
@@ -615,13 +630,18 @@ describe('PropertyEditor', () => {
       });
 
       render(<PropertyEditor />);
-      const enableButtons = screen.getAllByText('Enable');
-      // Click the stroke Enable button (should be the second one)
-      await user.click(enableButtons[enableButtons.length - 1]);
+
+      // Open the stroke color picker
+      const strokePicker = screen.getByRole('button', { name: /stroke color picker/i });
+      await user.click(strokePicker);
+
+      // Change color in the dropdown
+      const colorInput = screen.getByDisplayValue('#000000') as HTMLInputElement;
+      fireEvent.change(colorInput, { target: { value: '#ff0000' } });
 
       const state = useStore.getState();
       const layer = state.project?.layers.find(l => l.id === 'layer-1');
-      expect(layer?.element.style.stroke).toBe('#000000');
+      expect(layer?.element.style.stroke).toBe('#ff0000');
     });
 
     it('should add keyframe for stroke color', async () => {

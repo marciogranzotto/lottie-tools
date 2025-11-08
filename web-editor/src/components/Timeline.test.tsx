@@ -14,6 +14,7 @@ describe('Timeline', () => {
         height: 600,
         fps: 30,
         duration: 5,
+        loop: false,
         currentTime: 0,
         isPlaying: false,
         layers: [],
