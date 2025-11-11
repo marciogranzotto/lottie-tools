@@ -85,6 +85,25 @@ cd lottie-tools
 
 Then open http://localhost:5173 to try the editor!
 
+### Docker Setup (Alternative)
+
+Run the project in a containerized environment:
+
+```bash
+# Clone the repository
+git clone https://github.com/marciorodrigues/lottie-tools.git
+cd lottie-tools
+
+# Development mode (with hot-reload)
+docker-compose up lottie-dev
+
+# Production mode (optimized build with nginx)
+docker-compose --profile production up lottie-prod
+```
+
+**Development**: http://localhost:5173 (hot-reload enabled)
+**Production**: http://localhost:8080 (optimized nginx build)
+
 ### Manual Setup
 
 If you prefer to run commands manually:
@@ -180,6 +199,41 @@ The repository includes convenience scripts to simplify development:
   - Shows helpful status messages
 
 Both scripts are located in the root directory and are executable on Unix-like systems (macOS, Linux).
+
+### Docker Configuration
+
+The project includes Docker support for containerized development and deployment:
+
+- **`Dockerfile`** - Multi-stage production build
+  - Stage 1: Build application with Node.js 18
+  - Stage 2: Serve with nginx Alpine
+  - Optimized image size with layer caching
+  - Includes healthcheck endpoint
+  - Gzip compression and security headers
+
+- **`Dockerfile.dev`** - Development container
+  - Hot-reload enabled for local development
+  - Node.js 18 Alpine base
+  - Volume mounts for source code changes
+  - Vite dev server with host binding
+
+- **`docker-compose.yml`** - Orchestration configuration
+  - Development service (port 5173) with volume mounts
+  - Production service (port 8080) with nginx
+  - Network configuration
+  - Service profiles for environment selection
+
+- **`docker/nginx.conf`** - Production nginx configuration
+  - SPA routing support (fallback to index.html)
+  - Static asset caching (1 year)
+  - Gzip compression for text files
+  - Security headers (X-Frame-Options, CSP, etc.)
+  - Health check endpoint at `/health`
+
+- **`.dockerignore`** - Build optimization
+  - Excludes node_modules, tests, documentation
+  - Reduces image build context size
+  - Improves build performance
 
 ## 🤝 Contributing
 

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Development server with hot-reload
+  lottie-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: lottie-open-studio-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source code for hot-reload
+      - ./web-editor/src:/app/web-editor/src
+      - ./web-editor/public:/app/web-editor/public
+      - ./web-editor/index.html:/app/web-editor/index.html
+      - ./web-editor/vite.config.ts:/app/web-editor/vite.config.ts
+      - ./web-editor/tsconfig.json:/app/web-editor/tsconfig.json
+      - ./web-editor/tsconfig.node.json:/app/web-editor/tsconfig.node.json
+      # Exclude node_modules from mount
+      - /app/web-editor/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
+
+  # Production build
+  lottie-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lottie-open-studio-prod
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    profiles:
+      - production
+
+networks:
+  default:
+    name: lottie-network
