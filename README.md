@@ -5,6 +5,8 @@ An open-source web-based animation editor for creating and editing Lottie animat
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)](https://nodejs.org)
 
+![Lottie Open Studio Screenshot](assets/lottie-open-studio-example.png)
+
 ## 🎨 Features
 
 ### Current Status: 🚧 In Development (Milestone 8 Complete)
