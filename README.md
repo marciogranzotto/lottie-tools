@@ -65,7 +65,27 @@ node bin/lottie-to-gif examples/bond_vector.json
 
 ## 🚀 Getting Started
 
-### Web Editor (In Development)
+### Quick Start (Recommended)
+
+The easiest way to get started is using our convenience scripts:
+
+```bash
+# Clone the repository
+git clone https://github.com/marciorodrigues/lottie-tools.git
+cd lottie-tools
+
+# Setup (installs dependencies)
+./setup.sh
+
+# Run the development server
+./run.sh
+```
+
+Then open http://localhost:5173 to try the editor!
+
+### Manual Setup
+
+If you prefer to run commands manually:
 
 ```bash
 # Clone the repository
@@ -84,8 +104,6 @@ npm test
 # Check test coverage
 npm run coverage
 ```
-
-Then open http://localhost:5173 to try the editor!
 
 ### CLI Converter (Available Now)
 
@@ -144,6 +162,22 @@ See [PLAN.web-editor.md](PLAN.web-editor.md) for detailed milestone breakdown.
 - **Web Editor Plan**: [PLAN.web-editor.md](PLAN.web-editor.md) - Comprehensive development plan
 - **CLI Tool Plan**: [lottie-to-gif/PLAN.md](lottie-to-gif/PLAN.md) - CLI implementation details
 - **CLI Tool README**: [lottie-to-gif/README.md](lottie-to-gif/README.md) - Usage documentation
+
+### Helper Scripts
+
+The repository includes convenience scripts to simplify development:
+
+- **`setup.sh`** - Installs all dependencies for the web editor
+  - Checks Node.js version (>= 14.0.0 required)
+  - Installs npm packages
+  - One-time setup command
+
+- **`run.sh`** - Starts the development server
+  - Checks if dependencies are installed
+  - Launches Vite dev server at http://localhost:5173
+  - Shows helpful status messages
+
+Both scripts are located in the root directory and are executable on Unix-like systems (macOS, Linux).
 
 ## 🤝 Contributing
 
