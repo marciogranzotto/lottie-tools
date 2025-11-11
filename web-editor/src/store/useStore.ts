@@ -33,6 +33,7 @@ interface Store {
   canvasZoom: number;
   canvasPan: { x: number; y: number };
   timelineZoom: number;
+  previewMode: 'editor' | 'lottie' | 'comparison';
 
   // Actions
   setProject: (project: ProjectState) => void;
@@ -63,6 +64,9 @@ interface Store {
   // Timeline view actions
   setTimelineZoom: (zoom: number) => void;
   resetTimelineView: () => void;
+
+  // Preview actions
+  setPreviewMode: (mode: 'editor' | 'lottie' | 'comparison') => void;
 
   // Project management
   resetProject: () => void;
@@ -111,6 +115,7 @@ export const useStore = create<Store>((set) => ({
   canvasZoom: 1.0,
   canvasPan: { x: 0, y: 0 },
   timelineZoom: 1.0,
+  previewMode: 'editor',
 
   // Actions
   setProject: (project) => set({ project }),
@@ -375,6 +380,9 @@ export const useStore = create<Store>((set) => ({
   setTimelineZoom: (zoom) => set({ timelineZoom: Math.max(0.5, Math.min(5, zoom)) }),
 
   resetTimelineView: () => set({ timelineZoom: 1.0 }),
+
+  // Preview actions
+  setPreviewMode: (mode) => set({ previewMode: mode }),
 
   resetProject: () =>
     set({

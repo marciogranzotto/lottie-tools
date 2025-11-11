@@ -11,6 +11,8 @@ export function Toolbar() {
   const project = useStore((state) => state.project);
   const resetProject = useStore((state) => state.resetProject);
   const selectLayer = useStore((state) => state.selectLayer);
+  const previewMode = useStore((state) => state.previewMode);
+  const setPreviewMode = useStore((state) => state.setPreviewMode);
   const [exportDialog, setExportDialog] = useState<{
     lottie: LottieAnimation;
     filename: string;
@@ -63,6 +65,17 @@ export function Toolbar() {
     }
   };
 
+  const handleTogglePreview = () => {
+    // Cycle through: editor → lottie → comparison → editor
+    if (previewMode === 'editor') {
+      setPreviewMode('lottie');
+    } else if (previewMode === 'lottie') {
+      setPreviewMode('comparison');
+    } else {
+      setPreviewMode('editor');
+    }
+  };
+
   return (
     <>
       <div className="toolbar">
@@ -70,6 +83,16 @@ export function Toolbar() {
         <div className="toolbar-actions">
           <button onClick={handleNewProject}>New Project</button>
           <FileImport />
+          <button
+            onClick={handleTogglePreview}
+            disabled={!project || project.layers.length === 0}
+            className={previewMode !== 'editor' ? 'active' : ''}
+            title="Cycle through Editor / Preview / Comparison modes"
+          >
+            {previewMode === 'editor' && '👁️ Preview'}
+            {previewMode === 'lottie' && '⚖️ Compare'}
+            {previewMode === 'comparison' && '✏️ Editor'}
+          </button>
           <button onClick={handleExport} disabled={!project || project.layers.length === 0}>
             Export to Lottie
           </button>

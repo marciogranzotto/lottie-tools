@@ -7,7 +7,7 @@ An open-source web-based animation editor for creating and editing Lottie animat
 
 ## 🎨 Features
 
-### Current Status: 🚧 In Development (Milestone 7 Complete)
+### Current Status: 🚧 In Development (Milestone 8 Complete)
 
 **Lottie Open Studio** is currently under active development.
 
@@ -23,11 +23,16 @@ An open-source web-based animation editor for creating and editing Lottie animat
 - 🔄 **Lottie Import** - Import and edit existing Lottie JSON files with full round-trip support
 - 📈 **Custom Bezier Curves** - Visual bezier curve editor for custom easing with draggable control points
 - 👁️ **Live Preview** - Real-time canvas preview with smooth interpolated animations
-- 🧪 **Test Coverage** - 384 tests passing with comprehensive TDD approach
+- 🧪 **Test Coverage** - 440 tests passing with comprehensive TDD approach
+- 🎬 **Lottie Preview** - Live preview with official lottie-web player (SVG/Canvas/HTML renderers)
+- 🖥️ **Comparison Mode** - Side-by-side view of editor canvas vs Lottie preview
+- 🔍 **Fullscreen Preview** - Immersive preview mode with keyboard shortcuts (F/ESC)
+- ⚙️ **Quality Settings** - Preview at 0.5x, 1x, or 2x quality for performance testing
+- ⚠️ **Warning System** - Automatic detection of performance and compatibility issues
 
 #### 🚧 In Progress:
+- 💾 **Project Save/Load** - Persist projects to local storage with versioning
 - 🎨 **Advanced Features** - Text layers, gradients, masks
-- 📦 **lottie-web Integration** - Preview with official Lottie player
 
 See [PLAN.web-editor.md](PLAN.web-editor.md) for the complete development roadmap.
 
@@ -39,7 +44,7 @@ This repository contains two complementary tools for working with Lottie animati
 A browser-based animation editor for creating and editing Lottie animations.
 
 **Location**: `web-editor/`
-**Status**: 🚧 70% Complete (7/10 milestones to MVP)
+**Status**: 🚧 80% Complete (8/10 milestones to MVP)
 **Technology**: React + TypeScript + Vite + Zustand
 **Current Features**: SVG import, multi-property animation, Lottie JSON import/export, custom bezier curves
 
@@ -105,11 +110,11 @@ See [lottie-to-gif/README.md](lottie-to-gif/README.md) for full CLI documentatio
 - [x] **Milestone 5**: Multi-property animation (scale, rotation, opacity, colors, easing)
 - [x] **Milestone 6**: Lottie JSON export (TypeScript types, property/shape converters, download)
 - [x] **Milestone 7**: Lottie JSON import and round-trip editing (with custom bezier curves!)
-- [ ] **Milestone 8**: Preview integration with lottie-web
+- [x] **Milestone 8**: Preview integration with lottie-web
 - [ ] **Milestone 9**: Project save/load & state management
 - [ ] **Milestone 10**: UI/UX polish and documentation
 
-**Current Status**: ✅ Milestone 7 Complete - Full Lottie import/export with custom bezier curve editor!
+**Current Status**: ✅ Milestone 8 Complete - Live preview with lottie-web player, comparison mode, and fullscreen support!
 
 ### Post-MVP Features
 - [ ] Text layer support (v1.1)
