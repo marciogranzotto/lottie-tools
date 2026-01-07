@@ -73,7 +73,7 @@ The easiest way to get started is using our convenience scripts:
 
 ```bash
 # Clone the repository
-git clone https://github.com/marciorodrigues/lottie-tools.git
+git clone https://github.com/marciogranzotto/lottie-tools.git
 cd lottie-tools
 
 # Setup (installs dependencies)
@@ -91,7 +91,7 @@ Run the project in a containerized environment:
 
 ```bash
 # Clone the repository
-git clone https://github.com/marciorodrigues/lottie-tools.git
+git clone https://github.com/marciogranzotto/lottie-tools.git
 cd lottie-tools
 
 # Development mode (with hot-reload)
@@ -110,7 +110,7 @@ If you prefer to run commands manually:
 
 ```bash
 # Clone the repository
-git clone https://github.com/marciorodrigues/lottie-tools.git
+git clone https://github.com/marciogranzotto/lottie-tools.git
 cd lottie-tools/web-editor
 
 # Install dependencies
@@ -264,8 +264,8 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- 🐛 [Issue Tracker](https://github.com/marciorodrigues/lottie-tools/issues)
-- 💬 [Discussions](https://github.com/marciorodrigues/lottie-tools/discussions)
+- 🐛 [Issue Tracker](https://github.com/marciogranzotto/lottie-tools/issues)
+- 💬 [Discussions](https://github.com/marciogranzotto/lottie-tools/discussions)
 - 📧 Questions? Open an issue!
 
 ## 🗺️ Project Vision
