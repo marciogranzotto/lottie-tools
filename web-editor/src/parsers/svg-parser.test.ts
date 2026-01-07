@@ -132,15 +132,27 @@ describe('SVG Parser', () => {
       const result = parseSVG(svg);
 
       expect(result.success).toBe(true);
-      expect(result.layers).toHaveLength(1);
-      expect(result.layers[0].element.type).toBe('group');
+      // Should create 3 layers: 1 group + 2 children (flattened)
+      expect(result.layers).toHaveLength(3);
 
+      // First layer should be the group
+      expect(result.layers[0].element.type).toBe('group');
+      expect(result.layers[0].parentId).toBeUndefined();
+
+      // Group element should still contain children for Canvas rendering
       const group = result.layers[0].element;
       if (group.type === 'group') {
         expect(group.children).toHaveLength(2);
         expect(group.children[0].type).toBe('rect');
         expect(group.children[1].type).toBe('circle');
       }
+
+      // Second and third layers should be the rect and circle with parentId
+      expect(result.layers[1].element.type).toBe('rect');
+      expect(result.layers[1].parentId).toBe(result.layers[0].id);
+
+      expect(result.layers[2].element.type).toBe('circle');
+      expect(result.layers[2].parentId).toBe(result.layers[0].id);
     });
 
     it('should extract SVG viewBox dimensions', () => {

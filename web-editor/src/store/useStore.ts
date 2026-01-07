@@ -34,6 +34,7 @@ interface Store {
   canvasPan: { x: number; y: number };
   timelineZoom: number;
   previewMode: 'editor' | 'lottie' | 'comparison';
+  expandedGroupIds: string[]; // Track which groups are expanded in layers panel
 
   // Actions
   setProject: (project: ProjectState) => void;
@@ -67,6 +68,9 @@ interface Store {
 
   // Preview actions
   setPreviewMode: (mode: 'editor' | 'lottie' | 'comparison') => void;
+
+  // Group expansion actions
+  toggleGroupExpanded: (groupId: string) => void;
 
   // Project management
   resetProject: () => void;
@@ -116,6 +120,7 @@ export const useStore = create<Store>((set) => ({
   canvasPan: { x: 0, y: 0 },
   timelineZoom: 1.0,
   previewMode: 'editor',
+  expandedGroupIds: [],
 
   // Actions
   setProject: (project) => set({ project }),
@@ -167,9 +172,26 @@ export const useStore = create<Store>((set) => ({
     }),
 
   selectLayer: (layerId) =>
-    set((state) => ({
-      project: state.project ? { ...state.project, selectedLayerId: layerId, selectedLayerIds: layerId ? [layerId] : [] } : null,
-    })),
+    set((state) => {
+      if (!state.project) return state;
+
+      // Auto-expand all parent groups when selecting a layer
+      const expandedGroupIds = [...state.expandedGroupIds];
+      if (layerId) {
+        let currentLayer = state.project.layers.find(l => l.id === layerId);
+        while (currentLayer?.parentId) {
+          if (!expandedGroupIds.includes(currentLayer.parentId)) {
+            expandedGroupIds.push(currentLayer.parentId);
+          }
+          currentLayer = state.project.layers.find(l => l.id === currentLayer!.parentId);
+        }
+      }
+
+      return {
+        project: { ...state.project, selectedLayerId: layerId, selectedLayerIds: layerId ? [layerId] : [] },
+        expandedGroupIds,
+      };
+    }),
 
   toggleLayerSelection: (layerId) =>
     set((state) => {
@@ -383,6 +405,17 @@ export const useStore = create<Store>((set) => ({
 
   // Preview actions
   setPreviewMode: (mode) => set({ previewMode: mode }),
+
+  // Group expansion actions
+  toggleGroupExpanded: (groupId) =>
+    set((state) => {
+      const isExpanded = state.expandedGroupIds.includes(groupId);
+      const expandedGroupIds = isExpanded
+        ? state.expandedGroupIds.filter((id) => id !== groupId)
+        : [...state.expandedGroupIds, groupId];
+
+      return { expandedGroupIds };
+    }),
 
   resetProject: () =>
     set({

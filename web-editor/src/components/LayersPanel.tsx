@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 import './LayersPanel.css';
 
@@ -11,12 +11,33 @@ export function LayersPanel() {
   const renameLayer = useStore((state) => state.renameLayer);
   const deleteLayer = useStore((state) => state.deleteLayer);
   const deleteLayers = useStore((state) => state.deleteLayers);
+  const expandedGroupIds = useStore((state) => state.expandedGroupIds);
+  const toggleGroupExpanded = useStore((state) => state.toggleGroupExpanded);
 
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [layersToDelete, setLayersToDelete] = useState<string[] | null>(null);
+  const layerRefs = useRef<Record<string, HTMLLIElement | null>>({});
 
   const hasLayers = project && project.layers.length > 0;
+
+  // Helper function to check if a layer has children
+  const hasChildren = (layerId: string): boolean => {
+    return project?.layers.some((layer) => layer.parentId === layerId) || false;
+  };
+
+  // Helper function to check if a layer should be visible based on parent expansion state
+  const isLayerVisible = (layer: { id: string; parentId?: string }): boolean => {
+    if (!layer.parentId) {
+      // Top-level layers are always visible
+      return true;
+    }
+    // Child layers are only visible if their parent is expanded
+    return expandedGroupIds.includes(layer.parentId);
+  };
+
+  // Filter layers to only show visible ones
+  const visibleLayers = project?.layers.filter(isLayerVisible) || [];
 
   const handleStartEdit = (layerId: string, currentName: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,6 +60,11 @@ export function LayersPanel() {
       setEditingLayerId(null);
       setEditingName('');
     }
+  };
+
+  const handleExpandClick = (layerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleGroupExpanded(layerId);
   };
 
   const handleLayerClick = (layerId: string, e: React.MouseEvent) => {
@@ -103,6 +129,18 @@ export function LayersPanel() {
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [project?.selectedLayerId, project?.selectedLayerIds, project?.layers, editingLayerId]);
 
+  // Auto-scroll to selected layer
+  useEffect(() => {
+    const selectedId = project?.selectedLayerId;
+    const element = layerRefs.current[selectedId];
+    if (selectedId && element && typeof element.scrollIntoView === 'function') {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [project?.selectedLayerId]);
+
   return (
     <div className="layers-panel">
       <h2 className="panel-title">Layers</h2>
@@ -111,14 +149,26 @@ export function LayersPanel() {
           <p className="panel-empty">No layers yet. Import an SVG or Lottie file to get started.</p>
         ) : (
           <ul className="layers-list">
-            {project.layers.map((layer) => {
+            {visibleLayers.map((layer) => {
               const isSelected = project.selectedLayerIds?.includes(layer.id) || project.selectedLayerId === layer.id;
+              const layerHasChildren = hasChildren(layer.id);
+              const isExpanded = expandedGroupIds.includes(layer.id);
               return (<li
                   key={layer.id}
+                  ref={(el) => (layerRefs.current[layer.id] = el)}
                   className={`layer-item ${isSelected ? 'selected' : ''} ${layer.parentId ? 'child' : ''}`}
                   onClick={(e) => handleLayerClick(layer.id, e)}
                 >
                   <div className="layer-info">
+                    {layerHasChildren && (
+                      <button
+                        className="layer-expand-btn"
+                        onClick={(e) => handleExpandClick(layer.id, e)}
+                        aria-label={isExpanded ? 'Collapse group' : 'Expand group'}
+                      >
+                        {isExpanded ? '▼' : '▶'}
+                      </button>
+                    )}
                     {editingLayerId === layer.id ? (
                       <input
                         type="text"

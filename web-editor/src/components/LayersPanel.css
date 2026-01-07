@@ -45,6 +45,24 @@
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
+  position: relative;
+}
+
+.layer-expand-btn {
+  position: absolute;
+  left: -1.25rem;
+  top: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.25rem;
+  color: #aaaaaa;
+  transition: color 0.2s;
+}
+
+.layer-expand-btn:hover {
+  color: #ffffff;
 }
 
 .layer-name {

@@ -418,41 +418,192 @@ export function Canvas() {
     selectLayer(undefined);
   };
 
-  // Handle double-click to select individual child layers
+  // Calculate the bounding box area of an element
+  const getElementArea = (element: AnyElement): number => {
+    switch (element.type) {
+      case 'rect': {
+        const rect = element as RectElement;
+        return rect.width * rect.height;
+      }
+      case 'circle': {
+        const circle = element as CircleElement;
+        return Math.PI * circle.r * circle.r;
+      }
+      case 'ellipse': {
+        const ellipse = element as EllipseElement;
+        return Math.PI * ellipse.rx * ellipse.ry;
+      }
+      case 'path': {
+        const path = element as PathElement;
+        const coords = extractPathCoordinates(path.d);
+        if (coords.length === 0) return 0;
+
+        const xs = coords.map(c => c.x);
+        const ys = coords.map(c => c.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        return (maxX - minX) * (maxY - minY);
+      }
+      case 'polygon':
+      case 'polyline': {
+        const poly = element as PolygonElement | PolylineElement;
+        const points = poly.points.trim().split(/[\s,]+/).map(Number);
+        if (points.length < 2) return 0;
+
+        const xs: number[] = [];
+        const ys: number[] = [];
+        for (let i = 0; i < points.length; i += 2) {
+          xs.push(points[i]);
+          ys.push(points[i + 1]);
+        }
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        return (maxX - minX) * (maxY - minY);
+      }
+      default:
+        return 0;
+    }
+  };
+
+  // Calculate distance from click point to element center
+  const getDistanceToCenter = (element: AnyElement, localX: number, localY: number): number => {
+    let centerX = 0;
+    let centerY = 0;
+
+    switch (element.type) {
+      case 'rect': {
+        const rect = element as RectElement;
+        centerX = rect.x + rect.width / 2;
+        centerY = rect.y + rect.height / 2;
+        break;
+      }
+      case 'circle': {
+        const circle = element as CircleElement;
+        centerX = circle.cx;
+        centerY = circle.cy;
+        break;
+      }
+      case 'ellipse': {
+        const ellipse = element as EllipseElement;
+        centerX = ellipse.cx;
+        centerY = ellipse.cy;
+        break;
+      }
+      case 'path': {
+        const path = element as PathElement;
+        const coords = extractPathCoordinates(path.d);
+        if (coords.length > 0) {
+          const xs = coords.map(c => c.x);
+          const ys = coords.map(c => c.y);
+          centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+          centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+        }
+        break;
+      }
+      case 'polygon':
+      case 'polyline': {
+        const poly = element as PolygonElement | PolylineElement;
+        const points = poly.points.trim().split(/[\s,]+/).map(Number);
+        if (points.length >= 2) {
+          const xs: number[] = [];
+          const ys: number[] = [];
+          for (let i = 0; i < points.length; i += 2) {
+            xs.push(points[i]);
+            ys.push(points[i + 1]);
+          }
+          centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+          centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+        }
+        break;
+      }
+    }
+
+    const dx = localX - centerX;
+    const dy = localY - centerY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Handle double-click to select individual child layers with best match scoring
   const handleCanvasDoubleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!project || !canvasRef.current) return;
 
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d')!;
     const { x: clickX, y: clickY } = screenToCanvas(event.clientX, event.clientY);
 
-    // Check each layer in reverse order (top to bottom)
+    // Collect all layers that pass hit test with their scores
+    const candidates: Array<{ layerId: string; score: number }> = [];
+
+    // Check each layer in reverse order (top to bottom in rendering order)
+    // Skip group layers - only check actual shape layers for precise selection
     for (let i = project.layers.length - 1; i >= 0; i--) {
       const layer = project.layers[i];
-      if (!layer.visible) continue;
+      if (!layer.visible || layer.element.type === 'group') continue;
 
-      // Get interpolated transforms
+      // Apply transforms using canvas context to properly handle parent transforms
+      ctx.save();
+
+      // Apply parent transforms if this layer has a parent
+      if (layer.parentId) {
+        const parentLayer = project.layers.find(l => l.id === layer.parentId);
+        if (parentLayer) {
+          const parentX = parentLayer.element.transform.x;
+          const parentY = parentLayer.element.transform.y;
+          const parentRotation = parentLayer.element.transform.rotation;
+          const parentScaleX = parentLayer.element.transform.scaleX;
+          const parentScaleY = parentLayer.element.transform.scaleY;
+
+          ctx.translate(parentX, parentY);
+          ctx.rotate((parentRotation * Math.PI) / 180);
+          ctx.scale(parentScaleX, parentScaleY);
+        }
+      }
+
+      // Apply layer's own transform
       const xKeyframes = getKeyframesForLayer(layer.id, 'x');
       const yKeyframes = getKeyframesForLayer(layer.id, 'y');
       const x = xKeyframes.length > 0 ? getValueAtTime(xKeyframes, project.currentTime) : layer.element.transform.x;
       const y = yKeyframes.length > 0 ? getValueAtTime(yKeyframes, project.currentTime) : layer.element.transform.y;
 
-      // Hit test (handle both simple elements and groups)
-      let isHit = false;
-      if (layer.element.type === 'group') {
-        const ctx = canvasRef.current!.getContext('2d')!;
-        isHit = checkGroupHit(layer.element as GroupElement, clickX - x, clickY - y, ctx);
-      } else {
-        isHit = checkHit(layer.element, clickX - x, clickY - y);
-      }
+      ctx.translate(x, y);
+
+      // Transform click point to local coordinates
+      const matrix = ctx.getTransform();
+      const invMatrix = matrix.invertSelf();
+      const localX = invMatrix.a * clickX + invMatrix.c * clickY + invMatrix.e;
+      const localY = invMatrix.b * clickX + invMatrix.d * clickY + invMatrix.f;
+
+      ctx.restore();
+
+      // Hit test in local coordinates
+      const isHit = checkHit(layer.element, localX, localY);
 
       if (isHit) {
-        // Double-click always selects the actual layer, even if it has a parent
-        selectLayer(layer.id);
-        return;
+        // Calculate score: prefer smaller elements closer to click point
+        const area = getElementArea(layer.element);
+        const distance = getDistanceToCenter(layer.element, localX, localY);
+
+        // Score formula: lower is better
+        // Normalize area (divide by 10000 to keep numbers manageable)
+        // Weight distance more heavily than area
+        const score = distance * 2 + Math.sqrt(area) / 100;
+
+        candidates.push({ layerId: layer.id, score });
       }
     }
 
-    // If no layer was clicked, deselect
-    selectLayer(undefined);
+    // Select the layer with the best (lowest) score
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => a.score - b.score);
+      selectLayer(candidates[0].layerId);
+    } else {
+      // If no layer was clicked, deselect
+      selectLayer(undefined);
+    }
   };
 
   // Extract coordinates from SVG path data for bounding box calculation

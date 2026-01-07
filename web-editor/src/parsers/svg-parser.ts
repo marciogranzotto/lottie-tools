@@ -295,6 +295,36 @@ function detectUnsupportedElements(svgElement: Element): string[] {
 }
 
 /**
+ * Flatten a parsed element tree into separate layers with parentId relationships
+ */
+function flattenElementToLayers(element: AnyElement, parentId?: string): Layer[] {
+  const layers: Layer[] = [];
+
+  // Create a layer for this element
+  const layerId = generateId();
+  const layer: Layer = {
+    id: layerId,
+    name: element.name,
+    element,
+    visible: true,
+    locked: false,
+    parentId,
+  };
+  layers.push(layer);
+
+  // If this is a group, recursively flatten its children
+  if (element.type === 'group') {
+    const group = element as GroupElement;
+    group.children.forEach((child) => {
+      const childLayers = flattenElementToLayers(child, layerId);
+      layers.push(...childLayers);
+    });
+  }
+
+  return layers;
+}
+
+/**
  * Parse SVG string to layers
  * @param svgString - The SVG string to parse
  * @param groupName - Optional name for grouping all imported layers
@@ -355,18 +385,13 @@ export function parseSVG(svgString: string, groupName?: string): SVGParseResult 
     // Detect unsupported elements (raster images, foreignObjects)
     const warnings = detectUnsupportedElements(svgElement);
 
-    // Parse all child elements
+    // Parse all child elements and flatten groups into layers
     const childLayers: Layer[] = [];
     Array.from(svgElement.children).forEach((child) => {
       const element = parseElement(child as Element);
       if (element) {
-        childLayers.push({
-          id: generateId(),
-          name: element.name,
-          element,
-          visible: true,
-          locked: false,
-        });
+        const layers = flattenElementToLayers(element);
+        childLayers.push(...layers);
       }
     });
 
