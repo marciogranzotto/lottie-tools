@@ -2,6 +2,10 @@
 
 An open-source web-based animation editor for creating and editing Lottie animations. Import SVGs, create keyframe animations, edit existing Lottie files, and export to JSON format.
 
+## 🌐 Try it Online
+
+**[Launch Lottie Open Studio](https://marciogranzotto.github.io/lottie-tools/)** - Try the live version directly in your browser!
+
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)](https://nodejs.org)
 
