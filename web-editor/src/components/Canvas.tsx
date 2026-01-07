@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import './Canvas.css';
 import { useStore } from '../store/useStore';
 import { getValueAtTime, getColorAtTime } from '../engine/Interpolation';
-import type { RectElement, CircleElement, EllipseElement, PathElement, PolygonElement, PolylineElement } from '../models/Element';
+import type {
+  RectElement,
+  CircleElement,
+  EllipseElement,
+  PathElement,
+  PolygonElement,
+  PolylineElement,
+  GroupElement,
+  AnyElement,
+} from '../models/Element';
 
 export function Canvas() {
   const project = useStore((state) => state.project);
@@ -19,6 +28,128 @@ export function Canvas() {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+  /**
+   * Recursively render an element and its children (for groups)
+   */
+  const renderElement = (
+    element: AnyElement,
+    ctx: CanvasRenderingContext2D,
+    inheritedOpacity: number
+  ) => {
+    // Apply element's transform
+    ctx.save();
+    ctx.translate(element.transform.x, element.transform.y);
+    ctx.rotate((element.transform.rotation * Math.PI) / 180);
+    ctx.scale(element.transform.scaleX, element.transform.scaleY);
+
+    // Apply opacity (compound with inherited)
+    const elementOpacity = element.style.opacity ?? 1;
+    const finalOpacity = inheritedOpacity * elementOpacity;
+    ctx.globalAlpha = finalOpacity;
+
+    // Render based on type
+    if (element.type === 'group') {
+      const group = element as GroupElement;
+      // Recursively render each child
+      group.children.forEach((child) => {
+        renderElement(child, ctx, finalOpacity);
+      });
+    } else if (element.type === 'rect') {
+      const rect = element as RectElement;
+      const fill = element.style.fill;
+      const stroke = element.style.stroke;
+      const strokeWidth = element.style.strokeWidth ?? 1;
+
+      if (fill && fill !== 'none') {
+        ctx.fillStyle = fill;
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      }
+      if (stroke && stroke !== 'none') {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeWidth;
+        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      }
+    } else if (element.type === 'circle') {
+      const circle = element as CircleElement;
+      const fill = element.style.fill;
+      const stroke = element.style.stroke;
+      const strokeWidth = element.style.strokeWidth ?? 1;
+
+      ctx.beginPath();
+      ctx.arc(circle.cx, circle.cy, circle.r, 0, Math.PI * 2);
+      if (fill && fill !== 'none') {
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+      if (stroke && stroke !== 'none') {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+      }
+    } else if (element.type === 'ellipse') {
+      const ellipse = element as EllipseElement;
+      const fill = element.style.fill;
+      const stroke = element.style.stroke;
+      const strokeWidth = element.style.strokeWidth ?? 1;
+
+      ctx.beginPath();
+      ctx.ellipse(ellipse.cx, ellipse.cy, ellipse.rx, ellipse.ry, 0, 0, Math.PI * 2);
+      if (fill && fill !== 'none') {
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+      if (stroke && stroke !== 'none') {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+      }
+    } else if (element.type === 'path') {
+      const path = element as PathElement;
+      const fill = element.style.fill;
+      const stroke = element.style.stroke;
+      const strokeWidth = element.style.strokeWidth ?? 1;
+
+      const path2d = new Path2D(path.d);
+      if (fill && fill !== 'none') {
+        ctx.fillStyle = fill;
+        ctx.fill(path2d);
+      }
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke(path2d);
+      }
+    } else if (element.type === 'polygon' || element.type === 'polyline') {
+      const poly = element as PolygonElement | PolylineElement;
+      const fill = element.style.fill;
+      const stroke = element.style.stroke;
+      const strokeWidth = element.style.strokeWidth ?? 1;
+
+      const points = poly.points.trim().split(/[\s,]+/).map(Number);
+      if (points.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(points[0], points[1]);
+        for (let i = 2; i < points.length; i += 2) {
+          ctx.lineTo(points[i], points[i + 1]);
+        }
+        if (element.type === 'polygon') {
+          ctx.closePath();
+        }
+        if (fill && fill !== 'none' && element.type === 'polygon') {
+          ctx.fillStyle = fill;
+          ctx.fill();
+        }
+        if (stroke && stroke !== 'none') {
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = strokeWidth;
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.restore();
+  };
 
   // Render layers on canvas
   useEffect(() => {
@@ -104,94 +235,22 @@ export function Canvas() {
       // Set opacity
       ctx.globalAlpha = opacity;
 
-      // Render based on element type
-      if (layer.element.type === 'rect') {
-        const rect = layer.element as RectElement;
+      // Create a renderable element with keyframe-interpolated style values
+      // This allows layer-level animation to work while supporting groups
+      const renderableElement: AnyElement = {
+        ...layer.element,
+        style: {
+          ...layer.element.style,
+          fill: fill,
+          stroke: stroke,
+          strokeWidth: strokeWidth,
+        },
+      };
 
-        // Only fill if there's a valid fill color (not 'none')
-        if (fill && fill !== 'none') {
-          ctx.fillStyle = fill;
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        }
-
-        // Only stroke if there's a valid stroke color (not 'none')
-        if (stroke && stroke !== 'none') {
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = strokeWidth;
-          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-        }
-      } else if (layer.element.type === 'circle') {
-        const circle = layer.element as CircleElement;
-        ctx.beginPath();
-        ctx.arc(circle.cx, circle.cy, circle.r, 0, Math.PI * 2);
-
-        if (fill && fill !== 'none') {
-          ctx.fillStyle = fill;
-          ctx.fill();
-        }
-
-        if (stroke && stroke !== 'none') {
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = strokeWidth;
-          ctx.stroke();
-        }
-      } else if (layer.element.type === 'ellipse') {
-        const ellipse = layer.element as EllipseElement;
-        ctx.beginPath();
-        ctx.ellipse(ellipse.cx, ellipse.cy, ellipse.rx, ellipse.ry, 0, 0, Math.PI * 2);
-
-        if (fill && fill !== 'none') {
-          ctx.fillStyle = fill;
-          ctx.fill();
-        }
-
-        if (stroke && stroke !== 'none') {
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = strokeWidth;
-          ctx.stroke();
-        }
-      } else if (layer.element.type === 'path') {
-        const path = layer.element as PathElement;
-        const path2d = new Path2D(path.d);
-
-        if (fill && fill !== 'none') {
-          ctx.fillStyle = fill;
-          ctx.fill(path2d);
-        }
-
-        if (stroke) {
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = strokeWidth;
-          ctx.stroke(path2d);
-        }
-      } else if (layer.element.type === 'polygon' || layer.element.type === 'polyline') {
-        const poly = layer.element as PolygonElement | PolylineElement;
-        const points = poly.points.trim().split(/[\s,]+/).map(Number);
-
-        if (points.length >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(points[0], points[1]);
-
-          for (let i = 2; i < points.length; i += 2) {
-            ctx.lineTo(points[i], points[i + 1]);
-          }
-
-          if (layer.element.type === 'polygon') {
-            ctx.closePath();
-          }
-
-          if (fill && fill !== 'none' && layer.element.type === 'polygon') {
-            ctx.fillStyle = fill;
-            ctx.fill();
-          }
-
-          if (stroke && stroke !== 'none') {
-            ctx.strokeStyle = stroke;
-            ctx.lineWidth = strokeWidth;
-            ctx.stroke();
-          }
-        }
-      }
+      // Use recursive renderer for all element types (including groups)
+      // Note: opacity is already applied via ctx.globalAlpha above (line 236)
+      // So we pass 1.0 as inheritedOpacity to avoid double-applying it
+      renderElement(renderableElement, ctx, 1.0);
 
       ctx.restore();
     });
@@ -329,17 +388,20 @@ export function Canvas() {
       const layer = project.layers[i];
       if (!layer.visible) continue;
 
-      // Skip group layers (they don't render anything)
-      if (layer.element.type === 'group') continue;
-
       // Get interpolated transforms
       const xKeyframes = getKeyframesForLayer(layer.id, 'x');
       const yKeyframes = getKeyframesForLayer(layer.id, 'y');
       const x = xKeyframes.length > 0 ? getValueAtTime(xKeyframes, project.currentTime) : layer.element.transform.x;
       const y = yKeyframes.length > 0 ? getValueAtTime(yKeyframes, project.currentTime) : layer.element.transform.y;
 
-      // Simple hit test (check if click is within layer bounds)
-      const isHit = checkHit(layer.element, clickX - x, clickY - y);
+      // Hit test (handle both simple elements and groups)
+      let isHit = false;
+      if (layer.element.type === 'group') {
+        const ctx = canvasRef.current!.getContext('2d')!;
+        isHit = checkGroupHit(layer.element as GroupElement, clickX - x, clickY - y, ctx);
+      } else {
+        isHit = checkHit(layer.element, clickX - x, clickY - y);
+      }
 
       if (isHit) {
         // If layer has a parent, select the parent instead (single-click behavior)
@@ -367,17 +429,20 @@ export function Canvas() {
       const layer = project.layers[i];
       if (!layer.visible) continue;
 
-      // Skip group layers
-      if (layer.element.type === 'group') continue;
-
       // Get interpolated transforms
       const xKeyframes = getKeyframesForLayer(layer.id, 'x');
       const yKeyframes = getKeyframesForLayer(layer.id, 'y');
       const x = xKeyframes.length > 0 ? getValueAtTime(xKeyframes, project.currentTime) : layer.element.transform.x;
       const y = yKeyframes.length > 0 ? getValueAtTime(yKeyframes, project.currentTime) : layer.element.transform.y;
 
-      // Simple hit test (check if click is within layer bounds)
-      const isHit = checkHit(layer.element, clickX - x, clickY - y);
+      // Hit test (handle both simple elements and groups)
+      let isHit = false;
+      if (layer.element.type === 'group') {
+        const ctx = canvasRef.current!.getContext('2d')!;
+        isHit = checkGroupHit(layer.element as GroupElement, clickX - x, clickY - y, ctx);
+      } else {
+        isHit = checkHit(layer.element, clickX - x, clickY - y);
+      }
 
       if (isHit) {
         // Double-click always selects the actual layer, even if it has a parent
@@ -458,6 +523,40 @@ export function Canvas() {
     });
 
     return coords;
+  };
+
+  // Hit testing for group elements (recursively checks children)
+  const checkGroupHit = (
+    group: GroupElement,
+    localX: number,
+    localY: number,
+    ctx: CanvasRenderingContext2D
+  ): boolean => {
+    // Check each child recursively
+    for (const child of group.children) {
+      ctx.save();
+      ctx.translate(child.transform.x, child.transform.y);
+      ctx.rotate((child.transform.rotation * Math.PI) / 180);
+      ctx.scale(child.transform.scaleX, child.transform.scaleY);
+
+      // Transform the click point to child's local coordinate space
+      const transform = ctx.getTransform();
+      const inverse = transform.invertSelf();
+      const childLocalX = inverse.a * localX + inverse.c * localY + inverse.e;
+      const childLocalY = inverse.b * localX + inverse.d * localY + inverse.f;
+
+      let hit = false;
+      if (child.type === 'group') {
+        hit = checkGroupHit(child as GroupElement, childLocalX, childLocalY, ctx);
+      } else {
+        hit = checkHit(child, childLocalX, childLocalY);
+      }
+
+      ctx.restore();
+
+      if (hit) return true;
+    }
+    return false;
   };
 
   // Simple hit testing for different element types

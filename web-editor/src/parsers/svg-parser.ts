@@ -21,6 +21,7 @@ export interface SVGParseResult {
   width?: number;
   height?: number;
   error?: string;
+  warnings?: string[];
 }
 
 /**
@@ -267,6 +268,33 @@ function parseGroup(element: Element): GroupElement {
 }
 
 /**
+ * Detect raster images and other unsupported elements in SVG
+ */
+function detectUnsupportedElements(svgElement: Element): string[] {
+  const warnings: string[] = [];
+
+  // Detect <image> elements (embedded raster images)
+  const imageElements = svgElement.querySelectorAll('image');
+  if (imageElements.length > 0) {
+    warnings.push(
+      `SVG contains ${imageElements.length} embedded raster image${imageElements.length === 1 ? '' : 's'}. ` +
+      `Only vector graphics are supported - raster images will not be imported.`
+    );
+  }
+
+  // Detect <foreignObject> elements (can contain embedded content)
+  const foreignObjects = svgElement.querySelectorAll('foreignObject');
+  if (foreignObjects.length > 0) {
+    warnings.push(
+      `SVG contains ${foreignObjects.length} foreignObject element${foreignObjects.length === 1 ? '' : 's'}. ` +
+      `This content is not supported and will be ignored.`
+    );
+  }
+
+  return warnings;
+}
+
+/**
  * Parse SVG string to layers
  * @param svgString - The SVG string to parse
  * @param groupName - Optional name for grouping all imported layers
@@ -324,6 +352,9 @@ export function parseSVG(svgString: string, groupName?: string): SVGParseResult 
       }
     }
 
+    // Detect unsupported elements (raster images, foreignObjects)
+    const warnings = detectUnsupportedElements(svgElement);
+
     // Parse all child elements
     const childLayers: Layer[] = [];
     Array.from(svgElement.children).forEach((child) => {
@@ -375,6 +406,7 @@ export function parseSVG(svgString: string, groupName?: string): SVGParseResult 
       layers,
       width,
       height,
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   } catch (error) {
     return {

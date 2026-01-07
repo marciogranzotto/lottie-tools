@@ -361,4 +361,164 @@ describe('SVG Parser', () => {
       });
     });
   });
+
+  describe('Raster image detection', () => {
+    it('should detect embedded raster images with href', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="50" height="50"/>
+          <image href="data:image/png;base64,iVBOR..." x="0" y="0" width="100" height="100"/>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.length).toBe(1);
+      expect(result.warnings?.[0]).toContain('embedded raster image');
+      expect(result.warnings?.[0]).toContain('not be imported');
+      expect(result.layers).toHaveLength(1); // Only rect imported
+    });
+
+    it('should detect embedded raster images with xlink:href', () => {
+      const svg = `
+        <svg width="100" height="100" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <circle cx="50" cy="50" r="25"/>
+          <image xlink:href="photo.jpg" x="0" y="0" width="100" height="100"/>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('embedded raster image');
+      expect(result.layers).toHaveLength(1); // Only circle imported
+    });
+
+    it('should detect multiple raster images with plural message', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <image href="image1.png" x="0" y="0" width="50" height="50"/>
+          <image href="image2.jpg" x="50" y="50" width="50" height="50"/>
+          <rect x="10" y="10" width="30" height="30"/>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('2 embedded raster images');
+      expect(result.layers).toHaveLength(1); // Only rect imported
+    });
+
+    it('should detect single raster image with singular message', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <image href="image.png" x="0" y="0" width="50" height="50"/>
+          <rect x="10" y="10" width="30" height="30"/>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('1 embedded raster image');
+    });
+
+    it('should detect nested raster images in groups', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <g id="group1">
+            <rect x="10" y="10" width="30" height="30"/>
+            <image href="nested.png" x="0" y="0" width="100" height="100"/>
+          </g>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('embedded raster image');
+    });
+
+    it('should detect foreignObject elements', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="30" height="30"/>
+          <foreignObject x="0" y="0" width="100" height="100">
+            <img src="image.png" />
+          </foreignObject>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('foreignObject');
+      expect(result.layers).toHaveLength(1); // Only rect imported
+    });
+
+    it('should detect multiple foreignObject elements with plural message', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="30" height="30"/>
+          <foreignObject x="0" y="0" width="50" height="50">
+            <div>Content 1</div>
+          </foreignObject>
+          <foreignObject x="50" y="50" width="50" height="50">
+            <div>Content 2</div>
+          </foreignObject>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.[0]).toContain('2 foreignObject elements');
+    });
+
+    it('should not show warnings for pure vector SVGs', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="30" height="30"/>
+          <circle cx="50" cy="50" r="20"/>
+          <path d="M10 10 L50 50"/>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeUndefined();
+      expect(result.layers).toHaveLength(3); // 3 shapes (rect, circle, path)
+    });
+
+    it('should handle SVG with both images and foreignObject', () => {
+      const svg = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="30" height="30"/>
+          <image href="photo.png" x="0" y="0" width="50" height="50"/>
+          <foreignObject x="50" y="50" width="50" height="50">
+            <div>Content</div>
+          </foreignObject>
+        </svg>
+      `;
+
+      const result = parseSVG(svg);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.length).toBe(2);
+      expect(result.warnings?.[0]).toContain('raster image');
+      expect(result.warnings?.[1]).toContain('foreignObject');
+      expect(result.layers).toHaveLength(1); // Only rect imported
+    });
+  });
 });

@@ -127,6 +127,14 @@ export function FileImport() {
             parseResult.layers.length === 1 ? '' : 's'
           }`
         );
+
+        // Show warnings if any (e.g., unsupported elements)
+        if (parseResult.warnings && parseResult.warnings.length > 0) {
+          parseResult.warnings.forEach((warning) => {
+            toast.warning(warning, { duration: 5000 });
+          });
+        }
+
         setMessage(null);
       }
     } catch (error) {
