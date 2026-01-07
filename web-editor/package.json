@@ -1,7 +1,7 @@
 {
   "name": "lottie-open-studio",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lottie Open Studio - Web-based Lottie animation editor",
   "type": "module",
   "scripts": {
